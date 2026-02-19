@@ -4,8 +4,12 @@ from app.auth import check_password
 from app.ui.sidebar import show_sidebar
 from app.ui.dashboard import show_dashboard
 from app.data_processor import parse_and_validate_csv
+from app.db import init_db, save_transactions, get_transactions
 
 st.set_page_config(page_title="Personal Expense Report", layout="wide")
+
+# Initialize database
+init_db()
 
 if not check_password():
     st.stop()
@@ -30,17 +34,17 @@ if page == "Upload":
             st.success(f"{len(df)} transactions chargées avec succès!")
             st.dataframe(df.head())
             
-            # Save to session state for demo purposes (in real app, save to DB)
-            if 'transactions' not in st.session_state:
-                 st.session_state['transactions'] = pd.DataFrame()
-            
-            st.session_state['transactions'] = pd.concat([st.session_state.get('transactions', pd.DataFrame()), df], ignore_index=True)
-            st.success("Transactions ajoutées à la session.")
+            # Save to database
+            if save_transactions(df):
+                st.success("Transactions enregistrées dans la base de données.")
+            else:
+                st.error("Erreur lors de l'enregistrement dans la base de données.")
 
 elif page == "Dashboard":
     start_date, end_date = show_sidebar()
     
-    df = st.session_state.get('transactions', pd.DataFrame())
+    # Load from database
+    df = get_transactions()
     
     if not df.empty and start_date and end_date:
         # Filter by date
@@ -50,6 +54,8 @@ elif page == "Dashboard":
         df_filtered = df.loc[mask]
         
         show_dashboard(df_filtered)
+    elif df.empty:
+        st.info("Aucune donnée dans la base. Veuillez uploader des transactions dans l'onglet Upload.")
     else:
-        st.info("Veuillez uploader des données dans l'onglet Upload.")
+        st.info("Sélectionnez une période.")
 
