@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-from app.auth import check_password
 from app.ui.sidebar import show_sidebar
 from app.ui.dashboard import show_dashboard
 from app.data_processor import parse_and_validate_csv
@@ -10,9 +9,6 @@ st.set_page_config(page_title="Personal Expense Report", layout="wide")
 
 # Initialize database
 init_db()
-
-if not check_password():
-    st.stop()
 
 st.sidebar.title("Navigation")
 page = st.sidebar.radio("Aller à", ["Dashboard", "Upload"])

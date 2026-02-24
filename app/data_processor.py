@@ -9,7 +9,7 @@ def parse_and_validate_csv(file_content, user_id: Optional[int] = None) -> Tuple
         pd.DataFrame: Validated dataframe
         List[str]: List of error messages
     """
-    REQUIRED_COLUMNS = ['date', 'montant', 'devise', 'categorie']
+    REQUIRED_COLUMNS = ['Date de début', 'Description', 'Montant', 'Devise']
     errors = []
     
     try:
@@ -25,32 +25,58 @@ def parse_and_validate_csv(file_content, user_id: Optional[int] = None) -> Tuple
         # 1. Validate columns
         missing_cols = [col for col in REQUIRED_COLUMNS if col not in df.columns]
         if missing_cols:
-            if 'categorie' in missing_cols:
-                errors.append("Colonnes manquantes (sans catégorie)")
-            else:
-                errors.append(f"Colonnes manquantes: {', '.join(missing_cols)}")
+            errors.append(f"Colonnes manquantes: {', '.join(missing_cols)}")
             return pd.DataFrame(), errors
             
-        # 2. Filter extra columns
-        df = df[REQUIRED_COLUMNS]
+        # 2. Rename columns mapping
+        rename_map = {
+            'Date de début': 'start_date',
+            'Description': 'description',
+            'Montant': 'amount',
+            'Devise': 'currency',
+            'Type': 'type'
+        }
+        df = df.rename(columns=rename_map)
         
-        # 2b. Check for missing values in required columns
-        if df[REQUIRED_COLUMNS].isnull().any().any():
-             # Start check specifically for 'categorie'
-             if df['categorie'].isnull().any():
-                 errors.append("Colonnes manquantes (sans catégorie)")
-             else:
-                 # Check other columns
-                 null_cols = df.columns[df.isnull().any()].tolist()
-                 errors.append(f"Valeurs manquantes dans: {', '.join(null_cols)}")
+        cols_to_keep = ['start_date', 'description', 'amount', 'currency']
+        if 'type' in df.columns:
+            cols_to_keep.append('type')
+        df = df[cols_to_keep]
+        
+        # 2b. Check for missing values in required renamed columns
+        req_renamed = ['start_date', 'description', 'amount', 'currency']
+        if df[req_renamed].isnull().any().any():
+             null_cols = df[req_renamed].columns[df[req_renamed].isnull().any()].tolist()
+             errors.append(f"Valeurs manquantes dans: {', '.join(null_cols)}")
              return pd.DataFrame(), errors
 
         # 3. Validate Date
         try:
-            df['date'] = pd.to_datetime(df['date'], errors='raise')
+            df['start_date'] = pd.to_datetime(df['start_date'], errors='coerce')
+            if df['start_date'].isnull().any():
+                errors.append("Format de date invalide")
+                return pd.DataFrame(), errors
         except Exception:
             errors.append("Format de date invalide")
             return pd.DataFrame(), errors
+
+        # 4. Auto-categorize
+        def categorize(row):
+            desc = str(row['description']).lower()
+            if any(k in desc for k in ['sbb cff', 'tamoil', 'bp', 'sncf', 'heetch']):
+                return 'Transport'
+            elif any(k in desc for k in ['deliveroo', 'restaurant', 'cafe', 'bento', 'food', 'braisé', 'indes', 'boulangerie']):
+                return 'Food & Dining'
+            elif any(k in desc for k in ['auchan', 'carrefour', 'match']):
+                return 'Groceries'
+            elif any(k in desc for k in ['virement', 'revolut', 'change en', 'swift']):
+                return 'Transfer'
+            elif any(k in desc for k in ['amazon']):
+                return 'Shopping'
+            else:
+                return 'Other'
+                
+        df['category'] = df.apply(categorize, axis=1)
             
         return df, errors
 

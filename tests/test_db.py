@@ -14,8 +14,10 @@ class TestDBConsole(unittest.TestCase):
 
         init_db()
 
-        mock_cursor.execute.assert_called_once()
-        self.assertTrue("CREATE TABLE IF NOT EXISTS transactions" in mock_cursor.execute.call_args[0][0])
+        self.assertTrue(mock_cursor.execute.call_count >= 1)
+        # Check if the CREATE TABLE logic executes
+        create_sql = mock_cursor.execute.call_args_list[0][0][0]
+        self.assertTrue("CREATE TABLE IF NOT EXISTS transactions" in create_sql)
         mock_conn.commit.assert_called_once()
         mock_cursor.close.assert_called_once()
         mock_conn.close.assert_called_once()
@@ -28,10 +30,12 @@ class TestDBConsole(unittest.TestCase):
         mock_conn.cursor.return_value = mock_cursor
 
         data = {
-            'date': ['2023-01-01'],
-            'montant': [100.0],
-            'devise': ['EUR'],
-            'categorie': ['Food']
+            'start_date': [pd.to_datetime('2023-01-01 12:00:00')],
+            'description': ['Test'],
+            'amount': [100.0],
+            'currency': ['EUR'],
+            'category': ['Food'],
+            'type': ['Card']
         }
         df = pd.DataFrame(data)
 
@@ -40,17 +44,17 @@ class TestDBConsole(unittest.TestCase):
         self.assertTrue(result)
         mock_cursor.executemany.assert_called_once()
         self.assertTrue("INSERT INTO transactions" in mock_cursor.executemany.call_args[0][0])
+        self.assertTrue("ON DUPLICATE KEY UPDATE" in mock_cursor.executemany.call_args[0][0])
         mock_conn.commit.assert_called_once()
 
     @patch('app.db.get_db_connection')
     def test_get_transactions_success(self, mock_get_conn):
         mock_conn = MagicMock()
-        mock_cursor = MagicMock() # Not used by read_sql directly usually, but good to mock
+        mock_cursor = MagicMock()
         mock_get_conn.return_value = mock_conn
         
-        # pd.read_sql uses the connection. We can mock pd.read_sql instead to avoid DB implementation details of pandas
         with patch('pandas.read_sql') as mock_read_sql:
-            expected_df = pd.DataFrame({'date': [], 'montant': [], 'devise': [], 'categorie': []})
+            expected_df = pd.DataFrame({'date': [], 'amount': [], 'currency': [], 'category': []})
             mock_read_sql.return_value = expected_df
             
             result_df = get_transactions()

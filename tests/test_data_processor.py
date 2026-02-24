@@ -4,26 +4,27 @@ from io import StringIO
 from app.data_processor import parse_and_validate_csv
 
 def test_parse_valid_csv():
-    csv_content = StringIO("date,montant,devise,categorie\n2026-01-01,-50.00,EUR,Alimentation")
+    csv_content = StringIO("Date de début,Description,Montant,Devise,Type\n2026-01-01 10:00:00,Deliveroo,-50.00,EUR,Paiement par carte")
     df, errors = parse_and_validate_csv(csv_content)
     assert len(df) == 1
     assert len(errors) == 0
-    assert df.iloc[0]['montant'] == -50.00
+    assert df.iloc[0]['amount'] == -50.00
+    assert df.iloc[0]['category'] == 'Food & Dining'
 
-def test_parse_missing_category():
-    csv_content = StringIO("date,montant,devise,categorie\n2026-01-01,-50.00,EUR,")
+def test_parse_missing_columns():
+    csv_content = StringIO("Description,Montant,Devise\nDeliveroo,-50.00,EUR")
     df, errors = parse_and_validate_csv(csv_content)
     assert len(df) == 0
-    assert "sans catégorie" in str(errors)
+    assert "Colonnes manquantes" in str(errors[0])
 
 def test_parse_invalid_date():
-    csv_content = StringIO("date,montant,devise,categorie\ninvalid_date,-50.00,EUR,Alimentation")
+    csv_content = StringIO("Date de début,Description,Montant,Devise\ninvalid_date,Deliveroo,-50.00,EUR")
     df, errors = parse_and_validate_csv(csv_content)
     assert len(df) == 0
-    assert "date invalide" in str(errors)
+    assert "date invalide" in str(errors[0])
 
 def test_ignore_extra_columns():
-    csv_content = StringIO("date,montant,devise,categorie,commentaire\n2026-01-01,-50.00,EUR,Alimentation,test")
+    csv_content = StringIO("Date de début,Description,Montant,Devise,Frais\n2026-01-01 10:00:00,Deliveroo,-50.00,EUR,0.00")
     df, errors = parse_and_validate_csv(csv_content)
     assert len(df) == 1
-    assert 'commentaire' not in df.columns
+    assert 'Frais' not in df.columns

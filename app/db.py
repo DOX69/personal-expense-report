@@ -30,11 +30,14 @@ def init_db():
                 cursor.execute("""
                     CREATE TABLE IF NOT EXISTS transactions (
                         id INT AUTO_INCREMENT PRIMARY KEY,
-                        date DATE NOT NULL,
-                        montant FLOAT NOT NULL,
-                        devise VARCHAR(10) NOT NULL,
-                        categorie VARCHAR(255) NOT NULL,
-                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                        start_date DATETIME NOT NULL,
+                        description VARCHAR(500) NOT NULL,
+                        amount FLOAT NOT NULL,
+                        currency VARCHAR(10) NOT NULL,
+                        category VARCHAR(255) NOT NULL,
+                        type VARCHAR(255),
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        UNIQUE KEY idx_txn (start_date, description(255))
                     )
                 """)
                 conn.commit()
@@ -56,16 +59,26 @@ def save_transactions(df: pd.DataFrame) -> bool:
     
     try:
         cursor = conn.cursor()
-        query = "INSERT INTO transactions (date, montant, devise, categorie) VALUES (%s, %s, %s, %s)"
+        query = """
+            INSERT INTO transactions (start_date, description, amount, currency, category, type) 
+            VALUES (%s, %s, %s, %s, %s, %s)
+            ON DUPLICATE KEY UPDATE 
+            amount = VALUES(amount), 
+            currency = VALUES(currency), 
+            category = VALUES(category),
+            type = VALUES(type)
+        """
         
         # Prepare data
         data = []
         for _, row in df.iterrows():
             data.append((
-                row['date'],
-                row['montant'],
-                row['devise'],
-                row['categorie']
+                row['start_date'].to_pydatetime() if pd.notna(row['start_date']) else None,
+                str(row['description']),
+                float(row['amount']),
+                str(row['currency']),
+                str(row['category']),
+                str(row['type']) if 'type' in row and pd.notna(row['type']) else None
             ))
             
         cursor.executemany(query, data)
@@ -86,7 +99,7 @@ def get_transactions() -> pd.DataFrame:
         return pd.DataFrame()
     
     try:
-        query = "SELECT date, montant, devise, categorie FROM transactions ORDER BY date DESC"
+        query = "SELECT start_date as date, description, amount, currency, category, type FROM transactions ORDER BY start_date DESC"
         df = pd.read_sql(query, conn)
         conn.close()
         return df
