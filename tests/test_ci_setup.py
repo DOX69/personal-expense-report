@@ -1,12 +1,17 @@
 import unittest
 import os
 try:
-    from db import get_db_connection
+    from app.db import get_db_connection
 except ImportError:
     # Fallback for local testing if PYTHONPATH is not set
     import sys
-    sys.path.append(os.path.join(os.getcwd(), 'app-backend'))
-    from db import get_db_connection
+    sys.path.append(os.getcwd())
+    if not os.path.exists('app'):
+        # On windows symlink might not work easily, just use app-backend
+        sys.path.append(os.path.join(os.getcwd(), 'app-backend'))
+        from db import get_db_connection
+    else:
+        from app.db import get_db_connection
 
 class TestCISetup(unittest.TestCase):
     def test_ci_environment(self):
