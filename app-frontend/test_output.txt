@@ -1,0 +1,81 @@
+
+> app-frontend@0.1.0 test
+> jest
+
+FAIL src/components/dashboard/__tests__/MetricCard.test.tsx
+  MetricCard
+    × renders the title and value correctly (30 ms)
+    √ renders positive trend correctly (6 ms)
+    √ renders negative trend correctly (6 ms)
+
+  ● MetricCard › renders the title and value correctly
+
+    TestingLibraryElementError: Unable to find an element with the text: TOTAL BALANCE. This could be because the text is broken up by multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+    Ignored nodes: comments, script, style
+    [36m<body>[39m
+      [36m<div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"bg-[#1e1e1e] border border-[#333] rounded-2xl p-6 shadow-xl transition-transform hover:-translate-y-1"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center justify-between mb-4"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"p-3 bg-gray-800 rounded-lg"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"lucide lucide-house w-6 h-6 text-gray-400"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"24"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"24"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8"[39m
+                [36m/>[39m
+                [36m<path[39m
+                  [33md[39m=[32m"M3 10a2 2 0 0 1 .709-1.528l7-6a2 2 0 0 1 2.582 0l7 6A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<h3[39m
+            [33mclass[39m=[32m"text-gray-400 font-medium text-sm tracking-wide uppercase mb-1"[39m
+          [36m>[39m
+            [0mTotal Balance[0m
+          [36m</h3>[39m
+          [36m<p[39m
+            [33mclass[39m=[32m"text-3xl font-bold text-white tracking-tight"[39m
+          [36m>[39m
+            [0m$1,234.56[0m
+          [36m</p>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</body>[39m
+
+    [0m [90m  7 |[39m         render([33m<[39m[33mMetricCard[39m title[33m=[39m[32m"Total Balance"[39m value[33m=[39m[32m"$1,234.56"[39m icon[33m=[39m{[33mHome[39m} [33m/[39m[33m>[39m)[33m;[39m
+     [90m  8 |[39m
+    [31m[1m>[22m[39m[90m  9 |[39m         expect(screen[33m.[39mgetByText([32m'TOTAL BALANCE'[39m))[33m.[39mtoBeInTheDocument()[33m;[39m
+     [90m    |[39m                       [31m[1m^[22m[39m
+     [90m 10 |[39m         expect(screen[33m.[39mgetByText([32m'$1,234.56'[39m))[33m.[39mtoBeInTheDocument()[33m;[39m
+     [90m 11 |[39m     })[33m;[39m
+     [90m 12 |[39m[0m
+
+      at Object.getElementError (node_modules/@testing-library/dom/dist/config.js:37:19)
+      at node_modules/@testing-library/dom/dist/query-helpers.js:76:38
+      at node_modules/@testing-library/dom/dist/query-helpers.js:52:17
+      at node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+      at Object.getByText (src/components/dashboard/__tests__/MetricCard.test.tsx:9:23)
+
+Test Suites: 1 failed, 1 total
+Tests:       1 failed, 2 passed, 3 total
+Snapshots:   0 total
+Time:        1.197 s
+Ran all test suites.
