@@ -28,7 +28,7 @@
 
 ## 5. TDD & Polish
 
-- [ ] 5.1 Write Jest unit tests for critical frontend components and utility functions
-- [ ] 5.2 Write Pytest tests for the FastAPI backend logic
+- [x] 5.1 Write Jest unit tests for critical frontend components and utility functions
+- [x] 5.2 Write Pytest tests for the FastAPI backend logic
 - [x] 5.3 Final aesthetic polish (Tailwind micro-animations, loading states, error handling)
 - [x] 5.4 Safely remove legacy Streamlit UI code (`app/ui/`)
