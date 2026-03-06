@@ -1,5 +1,7 @@
 # Personal Expense Report ✨
 
+![CI Status](https://github.com/DOX69/personal-expense-report/actions/workflows/ci.yml/badge.svg)
+
 ![Next.js](https://img.shields.io/badge/Next.js-000000?style=for-the-badge&logo=next.js&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white)
 ![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)
