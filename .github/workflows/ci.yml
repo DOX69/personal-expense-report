@@ -42,10 +42,10 @@ jobs:
           DB_NAME: expense_report
           GITHUB_ACTIONS: true
         run: |
-          ln -snf app-backend app
+          cp -r app-backend app
           export PYTHONPATH=$PYTHONPATH:$(pwd)
           echo "PYTHONPATH: $PYTHONPATH"
-          ls -R app
+          sleep 10
           pytest tests/test_ci_setup.py
           pytest tests/test_db.py
           pytest app/tests/
