@@ -26,10 +26,27 @@ def read_root():
     return {"message": "Welcome to Personal Expense Report API"}
 
 @app.get("/api/transactions")
-def read_transactions():
+def read_transactions(start_date: str = None, end_date: str = None, category: str = None, search: str = None):
     df = get_transactions()
-    if not df.empty and 'date' in df.columns:
-        df['date'] = df['date'].dt.strftime('%Y-%m-%d')
+    
+    if not df.empty:
+        if 'date' in df.columns:
+            if start_date:
+                df = df[df['date'] >= pd.to_datetime(start_date)]
+            if end_date:
+                df = df[df['date'] <= pd.to_datetime(end_date)]
+                
+        if category:
+            df = df[df['category'] == category]
+            
+        if search:
+            search_term = search.lower()
+            mask = df['description'].str.lower().str.contains(search_term, na=False) | df['category'].str.lower().str.contains(search_term, na=False)
+            df = df[mask]
+
+        if 'date' in df.columns:
+            df['date'] = df['date'].dt.strftime('%Y-%m-%d')
+            
     df = df.where(pd.notnull(df), None)
     return df.to_dict(orient="records")
 
@@ -51,10 +68,19 @@ async def upload_csv(file: UploadFile = File(...)):
         return {"success": False, "errors": ["Failed to save transactions to database"]}
 
 @app.get("/api/dashboard/metrics")
-def get_dashboard_metrics():
+def get_dashboard_metrics(start_date: str = None, end_date: str = None, category: str = None):
     df = get_transactions()
     if df.empty:
         return {"total_income": 0, "total_expense": 0, "net_cashflow": 0}
+    
+    if 'date' in df.columns:
+        if start_date:
+            df = df[df['date'] >= pd.to_datetime(start_date)]
+        if end_date:
+            df = df[df['date'] <= pd.to_datetime(end_date)]
+            
+    if category and category != 'all':
+        df = df[df['category'] == category]
     
     total_income = df[df['amount'] > 0]['amount'].sum()
     total_expense = df[df['amount'] < 0]['amount'].sum()
@@ -66,10 +92,16 @@ def get_dashboard_metrics():
     }
 
 @app.get("/api/dashboard/sankey")
-def get_sankey_data():
+def get_sankey_data(start_date: str = None, end_date: str = None):
     df = get_transactions()
     if df.empty:
         return {"nodes": [], "links": []}
+        
+    if 'date' in df.columns:
+        if start_date:
+            df = df[df['date'] >= pd.to_datetime(start_date)]
+        if end_date:
+            df = df[df['date'] <= pd.to_datetime(end_date)]
     
     income_df = df[df['amount'] > 0]
     expense_df = df[df['amount'] < 0]

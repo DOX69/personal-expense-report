@@ -46,6 +46,17 @@ def test_metrics_with_data(monkeypatch):
     assert data["total_expense"] == pytest.approx(-56.08, rel=1e-2)
     assert data["net_cashflow"] == pytest.approx(3443.92, rel=1e-2)
 
+def test_metrics_with_date_filter(monkeypatch):
+    monkeypatch.setattr("main.get_transactions", _mock_transactions_df)
+
+    # Filter for January only
+    response = client.get("/api/dashboard/metrics?start_date=2026-01-01&end_date=2026-01-31")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["total_income"] == 3500.00
+    assert data["total_expense"] == pytest.approx(-45.08, rel=1e-2) # Excludes the -11.00 from Feb
+    assert data["net_cashflow"] == pytest.approx(3454.92, rel=1e-2)
+
 def test_transactions_returns_formatted_records(monkeypatch):
     monkeypatch.setattr("main.get_transactions", _mock_transactions_df)
 
@@ -55,6 +66,30 @@ def test_transactions_returns_formatted_records(monkeypatch):
     assert len(data) == 3
     assert data[0]['date'] == '2026-01-15'
     assert data[0]['description'] == 'Deliveroo'
+
+def test_transactions_with_filters(monkeypatch):
+    monkeypatch.setattr("main.get_transactions", _mock_transactions_df)
+
+    # Filter by category
+    response = client.get("/api/transactions?category=Food%20%26%20Dining")
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) == 1
+    assert data[0]['description'] == 'Deliveroo'
+
+    # Filter by search term
+    response = client.get("/api/transactions?search=Salaire")
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) == 1
+    assert data[0]['amount'] == 3500.00
+    
+    # Filter by date range
+    response = client.get("/api/transactions?start_date=2026-02-01&end_date=2026-02-28")
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) == 1
+    assert data[0]['description'] == 'SBB CFF FFS'
 
 def test_transactions_empty_db(monkeypatch):
     monkeypatch.setattr("main.get_transactions", lambda: pd.DataFrame())
@@ -89,4 +124,16 @@ def test_sankey_returns_unidirectional_data(monkeypatch):
     # Only central node should appear in both source and target sets
     shared = sources & targets
     assert shared == {central_idx}, f"Only 'Current Account' should be shared, but found: {shared}"
+
+def test_sankey_with_date_filter(monkeypatch):
+    monkeypatch.setattr("main.get_transactions", _mock_transactions_df)
+
+    response = client.get("/api/dashboard/sankey?start_date=2026-01-01&end_date=2026-01-31")
+    assert response.status_code == 200
+    data = response.json()
+    
+    node_names = [n['name'] for n in data['nodes']]
+    assert "Food & Dining (Expense)" in node_names
+    assert "Transport (Expense)" not in node_names # February item should be excluded
+
 

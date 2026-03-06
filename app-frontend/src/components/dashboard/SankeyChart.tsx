@@ -40,11 +40,21 @@ function SankeyNode({ x, y, width, height, index, payload }: any) {
     );
 }
 
-export default function CashflowSankey() {
+interface CashflowSankeyProps {
+    startDate?: string;
+    endDate?: string;
+    // Category might break Sankey if it's too restrictive, but we'll include it logically though Sankey doesn't filter by category on the main graph normally, the API doesn't accept category.
+}
+
+export default function CashflowSankey({ startDate, endDate }: CashflowSankeyProps) {
     const { data: sankeyData, isLoading, error } = useQuery<SankeyData>({
-        queryKey: ['sankey'],
+        queryKey: ['sankey', startDate, endDate],
         queryFn: async () => {
-            const { data } = await axios.get('http://localhost:8000/api/dashboard/sankey');
+            const params = new URLSearchParams();
+            if (startDate) params.append('start_date', startDate);
+            if (endDate) params.append('end_date', endDate);
+
+            const { data } = await axios.get(`http://localhost:8000/api/dashboard/sankey?${params.toString()}`);
             return data;
         }
     });
