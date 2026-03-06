@@ -9,3 +9,4 @@ pytest-cov
 fastapi
 uvicorn
 python-multipart
+httpx
