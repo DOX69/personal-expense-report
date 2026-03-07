@@ -31,37 +31,59 @@ The project was recently migrated to a modern decoupled stack:
 ### Architecture
 
 ```mermaid
-graph TD
-    User((User))
-    
-    subgraph Frontend ["App Frontend (Next.js)"]
-        Dashboard[Dashboard Page]
-        Transactions[Transactions Page]
-        Import[Import Page]
-        Charts[Recharts Components]
+flowchart LR
+    %% Definitions
+    User(("👤 User"))
+
+    %% Frontend Subgraph
+    subgraph Frontend ["🖥️ App Frontend (Next.js)"]
+        direction TB
+        UI["User Interface
+        (Dashboard, Transactions, Import)"]
+        Charts["📊 Recharts"]
+        UI -.-> Charts
     end
 
-    subgraph Backend ["App Backend (FastAPI)"]
-        API[FastAPI Endpoints]
-        Processor[Data Processor (Pandas)]
-        DB_Logic[DB Logic (Connector)]
+    %% Backend Subgraph
+    subgraph Backend ["⚙️ App Backend (FastAPI)"]
+        direction TB
+        API["🔌 API Endpoints"]
+        Pandas["🐼 Data Processor (Pandas)"]
+        DBLogic["🗄️ DB Connector"]
+
+        API --> Pandas
+        API <--> DBLogic
     end
 
-    subgraph Storage ["Data Storage"]
-        CSV[(transactions.csv)]
-        MySQL[(MySQL Database)]
+    %% Storage Subgraph
+    subgraph Storage ["💾 Data Storage"]
+        direction TB
+        CSV[/"📄 transactions.csv"/]
+        MySQL[("🐬 MySQL Database")]
     end
 
-    User -->|Views/Interacts| Dashboard
-    User -->|Uploads CSV| Import
-    Dashboard -->|Get Metrics/Sankey| API
-    Dashboard -->|Get Transactions| API
-    Import -->|Upload File| API
-    API -->|Parse & Clean| Processor
-    Processor -->|Update/Read| CSV
-    Processor -->|Save/Select| DB_Logic
-    DB_Logic -->|Query/Insert| MySQL
-    API -->|Fetch Data| DB_Logic
+    %% Interactions
+    User -- "Views & Interacts" --> UI
+    User -- "Uploads CSV" --> UI
+
+    UI -- "Fetches Metrics & Data" --> API
+    UI -- "Sends File" --> API
+
+    Pandas -- "Reads/Updates" --> CSV
+    Pandas -- "Parsed Data" --> DBLogic
+
+    DBLogic <--> MySQL
+
+    %% Styling
+    classDef frontend fill:#E3F2FD,stroke:#2196F3,stroke-width:2px,color:#0D47A1;
+    classDef backend fill:#E8F5E9,stroke:#4CAF50,stroke-width:2px,color:#1B5E20;
+    classDef storage fill:#FFF3E0,stroke:#FF9800,stroke-width:2px,color:#E65100;
+    classDef user fill:#FCE4EC,stroke:#E91E63,stroke-width:2px,color:#880E4F;
+
+    class Frontend,UI,Charts frontend;
+    class Backend,API,Pandas,DBLogic backend;
+    class Storage,CSV,MySQL storage;
+    class User user;
 ```
 
 #### Component Breakdown
@@ -246,37 +268,59 @@ Le projet a récemment été migré sur une stack moderne découplée :
 ### Architecture
 
 ```mermaid
-graph TD
-    User((User))
+flowchart LR
+    %% Definitions
+    User(("👤 User"))
 
-    subgraph Frontend ["App Frontend (Next.js)"]
-        Dashboard[Dashboard Page]
-        Transactions[Transactions Page]
-        Import[Import Page]
-        Charts[Recharts Components]
+    %% Frontend Subgraph
+    subgraph Frontend ["🖥️ App Frontend (Next.js)"]
+        direction TB
+        UI["User Interface
+        (Dashboard, Transactions, Import)"]
+        Charts["📊 Recharts"]
+        UI -.-> Charts
     end
 
-    subgraph Backend ["App Backend (FastAPI)"]
-        API[FastAPI Endpoints]
-        Processor[Data Processor (Pandas)]
-        DB_Logic[DB Logic (Connector)]
+    %% Backend Subgraph
+    subgraph Backend ["⚙️ App Backend (FastAPI)"]
+        direction TB
+        API["🔌 API Endpoints"]
+        Pandas["🐼 Data Processor (Pandas)"]
+        DBLogic["🗄️ DB Connector"]
+
+        API --> Pandas
+        API <--> DBLogic
     end
 
-    subgraph Storage ["Data Storage"]
-        CSV[(transactions.csv)]
-        MySQL[(MySQL Database)]
+    %% Storage Subgraph
+    subgraph Storage ["💾 Data Storage"]
+        direction TB
+        CSV[/"📄 transactions.csv"/]
+        MySQL[("🐬 MySQL Database")]
     end
 
-    User -->|Views/Interacts| Dashboard
-    User -->|Uploads CSV| Import
-    Dashboard -->|Get Metrics/Sankey| API
-    Dashboard -->|Get Transactions| API
-    Import -->|Upload File| API
-    API -->|Parse & Clean| Processor
-    Processor -->|Update/Read| CSV
-    Processor -->|Save/Select| DB_Logic
-    DB_Logic -->|Query/Insert| MySQL
-    API -->|Fetch Data| DB_Logic
+    %% Interactions
+    User -- "Views & Interacts" --> UI
+    User -- "Uploads CSV" --> UI
+
+    UI -- "Fetches Metrics & Data" --> API
+    UI -- "Sends File" --> API
+
+    Pandas -- "Reads/Updates" --> CSV
+    Pandas -- "Parsed Data" --> DBLogic
+
+    DBLogic <--> MySQL
+
+    %% Styling
+    classDef frontend fill:#E3F2FD,stroke:#2196F3,stroke-width:2px,color:#0D47A1;
+    classDef backend fill:#E8F5E9,stroke:#4CAF50,stroke-width:2px,color:#1B5E20;
+    classDef storage fill:#FFF3E0,stroke:#FF9800,stroke-width:2px,color:#E65100;
+    classDef user fill:#FCE4EC,stroke:#E91E63,stroke-width:2px,color:#880E4F;
+
+    class Frontend,UI,Charts frontend;
+    class Backend,API,Pandas,DBLogic backend;
+    class Storage,CSV,MySQL storage;
+    class User user;
 ```
 
 #### Component Breakdown
