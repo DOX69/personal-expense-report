@@ -12,7 +12,7 @@
 - [A propos](#a-propos)
 - [Tech Stack](#tech-stack)
 - [Architecture](#architecture)
-- [Comment ça marche ?](#comment-ça-marche-)
+- [Comment ça marche ?](#comment-ça-marche)
 - [Installation & Utilisation](#installation--utilisation)
 - [Développement](#développement)
 
@@ -35,6 +35,46 @@ Le projet a récemment été migré sur une stack moderne découplée :
 - **Tests :** Jest & React Testing Library (Frontend), Pytest (Backend).
 
 ## Architecture
+
+```mermaid
+graph TD
+    User((User))
+    
+    subgraph Frontend ["App Frontend (Next.js)"]
+        Dashboard[Dashboard Page]
+        Transactions[Transactions Page]
+        Import[Import Page]
+        Charts[Recharts Components]
+    end
+
+    subgraph Backend ["App Backend (FastAPI)"]
+        API[FastAPI Endpoints]
+        Processor[Data Processor (Pandas)]
+        DB_Logic[DB Logic (Connector)]
+    end
+
+    subgraph Storage ["Data Storage"]
+        CSV[(transactions.csv)]
+        MySQL[(MySQL Database)]
+    end
+
+    User -->|Views/Interacts| Dashboard
+    User -->|Uploads CSV| Import
+    Dashboard -->|Get Metrics/Sankey| API
+    Dashboard -->|Get Transactions| API
+    Import -->|Upload File| API
+    API -->|Parse & Clean| Processor
+    Processor -->|Update/Read| CSV
+    Processor -->|Save/Select| DB_Logic
+    DB_Logic -->|Query/Insert| MySQL
+    API -->|Fetch Data| DB_Logic
+```
+
+### Component Breakdown
+- **Next.js Frontend**: A modern, responsive SPA using Tailwind CSS for styling and Lucide icons.
+- **FastAPI Backend**: A high-performance Python API handling business logic and data orchestration.
+- **Pandas Processor**: Handles complex CSV manipulations, auto-categorization of expenses, and duplicate detection.
+- **Hybrid Storage**: Uses `transactions.csv` for flat-file portability and **MySQL** for robust relational storage and persistence.
 
 ```text
 personal-expense-report/
@@ -71,34 +111,66 @@ Le projet est entièrement conteneurisé. Sans aucune dépendance logicielle aut
 
 ## Installation & Utilisation
 
-### Pré-requis
-- **Docker** et **Docker Compose** d'installés sur votre machine (ou Docker Desktop).
+### Case A: Docker (Recommended)
+The simplest way to run the project.
 
-### 1. Cloner le repo
-```bash
-git clone https://github.com/votre-nom/personal-expense-report.git
+1. **Prerequisites**: [Docker Desktop](https://www.docker.com/products/docker-desktop/) installed.
+2. **Clone & Build**:
+   ```bash
+   git clone https://github.com/DOX69/personal-expense-report.git
+   cd personal-expense-report
+   docker-compose up --build -d
+   ```
+3. **Access**: 
+   - App: [http://localhost:3000](http://localhost:3000)
+   - Docs: [http://localhost:8000/docs](http://localhost:8000/docs)
+
+### Case B: Windows Setup Guide (Manual)
+Follow these steps to set up a full development environment on a fresh Windows machine.
+
+#### 1. Install Dependencies
+Ensure you have the following installed:
+- **Python 3.11+**: [Download here](https://www.python.org/downloads/windows/). *Check "Add Python to PATH" during installation.*
+- **Node.js 18+**: [Download here](https://nodejs.org/).
+- **Git**: [Download here](https://git-scm.com/download/win).
+- **MySQL/MariaDB**: (Or use Docker for just the database: `docker-compose up db -d`).
+
+#### 2. Clone the Project
+Open a Terminal (PowerShell or CMD) and run:
+```powershell
+git clone https://github.com/DOX69/personal-expense-report.git
 cd personal-expense-report
 ```
 
-### 2. Variables d'environnement (Optionnel)
-Le projet contient un `docker-compose.yml` préconfiguré, mais vous pouvez sécuriser ou modifier la base de données via un `.env` :
-- `DB_USER`
-- `DB_PASSWORD`
-- `DB_NAME`
-- `DB_ROOT_PASSWORD`
+#### 3. Backend Setup
+```powershell
+# Create Virtual Environment
+python -m venv .venv
+.\.venv\Scripts\activate
 
-### 3. Exécuter l'application
-Lancez l'orchestration de tous les outils avec docker compose en arrière plan :
-```bash
-docker-compose up --build -d
+# Install requirements
+pip install -r requirements.txt
+
+# Start Backend (API)
+cd app-backend
+uvicorn main:app --reload --port 8000
 ```
 
-### 4. Accès
-L'interface web Next.js est alors accessible sur votre navigateur à l'adresse URL :
-**[http://localhost:3000](http://localhost:3000)**
+#### 4. Frontend Setup
+Open a *new* terminal window:
+```powershell
+cd personal-expense-report/app-frontend
 
-L'API Rest (et sa documentation Swagger auto-générée) est accessible ici :
-**[http://localhost:8000/docs](http://localhost:8000/docs)**
+# Install node packages
+npm install
+
+# Start Frontend (Dashboard)
+npm run dev
+```
+
+#### 5. Verify the Installation
+- Navigate to `http://localhost:3000`. 
+- Go to the **Import** tab and upload a test CSV to populate the dashboard!
 
 ---
 

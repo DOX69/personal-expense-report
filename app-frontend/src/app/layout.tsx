@@ -18,8 +18,7 @@ export const metadata: Metadata = {
 };
 
 import Providers from "./providers";
-import Sidebar from "@/components/layout/Sidebar";
-import Header from "@/components/layout/Header";
+import LayoutWrapper from "@/components/layout/LayoutWrapper";
 
 export default function RootLayout({
   children,
@@ -27,20 +26,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en" className="dark" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-[#121212] text-white overflow-hidden`}
       >
         <Providers>
-          <div className="flex h-screen w-full">
-            <Sidebar />
-            <div className="flex-1 flex flex-col ml-64 overflow-hidden">
-              <Header />
-              <main className="flex-1 overflow-y-auto p-8 bg-[#121212]">
-                {children}
-              </main>
-            </div>
-          </div>
+          <LayoutWrapper>
+            {children}
+          </LayoutWrapper>
         </Providers>
       </body>
     </html>
