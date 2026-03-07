@@ -1,0 +1,10 @@
+pandas==2.2.0
+mysql-connector-python==8.3.0
+bcrypt==4.1.2
+python-dotenv==1.0.1
+pytest
+pytest-cov
+fastapi
+uvicorn
+python-multipart
+httpx
