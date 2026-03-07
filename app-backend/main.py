@@ -25,20 +25,27 @@ def startup_event():
 def read_root():
     return {"message": "Welcome to Personal Expense Report API"}
 
+def filter_transactions_df(df: pd.DataFrame, start_date: str = None, end_date: str = None, category: str = None) -> pd.DataFrame:
+    if df.empty or 'date' not in df.columns:
+        return df
+        
+    if start_date:
+        df = df[df['date'] >= pd.to_datetime(start_date)]
+    if end_date:
+        df = df[df['date'] <= pd.to_datetime(end_date)]
+        
+    if category and category != 'all':
+        df = df[df['category'] == category]
+        
+    return df
+
 @app.get("/api/transactions")
 def read_transactions(start_date: str = None, end_date: str = None, category: str = None, search: str = None):
     df = get_transactions()
     
     if not df.empty:
-        if 'date' in df.columns:
-            if start_date:
-                df = df[df['date'] >= pd.to_datetime(start_date)]
-            if end_date:
-                df = df[df['date'] <= pd.to_datetime(end_date)]
-                
-        if category:
-            df = df[df['category'] == category]
-            
+        df = filter_transactions_df(df, start_date, end_date, category)
+        
         if search:
             search_term = search.lower()
             mask = df['description'].str.lower().str.contains(search_term, na=False) | df['category'].str.lower().str.contains(search_term, na=False)
@@ -73,14 +80,7 @@ def get_dashboard_metrics(start_date: str = None, end_date: str = None, category
     if df.empty:
         return {"total_income": 0, "total_expense": 0, "net_cashflow": 0}
     
-    if 'date' in df.columns:
-        if start_date:
-            df = df[df['date'] >= pd.to_datetime(start_date)]
-        if end_date:
-            df = df[df['date'] <= pd.to_datetime(end_date)]
-            
-    if category and category != 'all':
-        df = df[df['category'] == category]
+    df = filter_transactions_df(df, start_date, end_date, category)
     
     total_income = df[df['amount'] > 0]['amount'].sum()
     total_expense = df[df['amount'] < 0]['amount'].sum()
@@ -97,11 +97,7 @@ def get_sankey_data(start_date: str = None, end_date: str = None):
     if df.empty:
         return {"nodes": [], "links": []}
         
-    if 'date' in df.columns:
-        if start_date:
-            df = df[df['date'] >= pd.to_datetime(start_date)]
-        if end_date:
-            df = df[df['date'] <= pd.to_datetime(end_date)]
+    df = filter_transactions_df(df, start_date, end_date)
     
     income_df = df[df['amount'] > 0]
     expense_df = df[df['amount'] < 0]

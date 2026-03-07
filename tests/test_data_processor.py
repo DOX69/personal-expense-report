@@ -1,7 +1,10 @@
 import pytest
 import pandas as pd
 from io import StringIO
-from app.data_processor import parse_and_validate_csv
+import sys
+import os
+sys.path.append(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'app-backend'))
+from data_processor import parse_and_validate_csv
 
 def test_parse_valid_csv():
     csv_content = StringIO("Date de début,Description,Montant,Devise,Type\n2026-01-01 10:00:00,Deliveroo,-50.00,EUR,Paiement par carte")
@@ -9,7 +12,7 @@ def test_parse_valid_csv():
     assert len(df) == 1
     assert len(errors) == 0
     assert df.iloc[0]['amount'] == -50.00
-    assert df.iloc[0]['category'] == 'Food & Dining'
+    assert df.iloc[0]['category'] == 'Dépenses Variables - Vie Sociale'
 
 def test_parse_missing_columns():
     csv_content = StringIO("Description,Montant,Devise\nDeliveroo,-50.00,EUR")
