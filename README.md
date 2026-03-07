@@ -12,7 +12,7 @@
 - [A propos](#a-propos)
 - [Tech Stack](#tech-stack)
 - [Architecture](#architecture)
-- [Comment ça marche ?](#comment-ça-marche-)
+- [Comment ça marche ?](#comment-ça-marche)
 - [Installation & Utilisation](#installation--utilisation)
 - [Développement](#développement)
 
@@ -125,7 +125,7 @@ The simplest way to run the project.
    - App: [http://localhost:3000](http://localhost:3000)
    - Docs: [http://localhost:8000/docs](http://localhost:8000/docs)
 
-### Case B: Windows Setup Guide (Manual/Friend Tutorial)
+### Case B: Windows Setup Guide (Manual)
 Follow these steps to set up a full development environment on a fresh Windows machine.
 
 #### 1. Install Dependencies
