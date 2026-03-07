@@ -13,6 +13,7 @@
 - [ ] Update `README.md` to include a full French translation and an English translation.
 
 ## Phase 4: QA and Verification
+- [ ] Clean `*.json` and `*.txt` output useless files from tests (e.g., `test_failures.txt`, `pytest_output.txt`)
 - [ ] Run backend tests suite using `pytest`.
 - [ ] Restart Docker containers and verify application functionality manually or via integration testing, especially checking features from the `2026-03-07-dashboard-improvements` sprint.
 - [ ] Resolve any issues using systematic debugging and write tests to prevent future regressions.
