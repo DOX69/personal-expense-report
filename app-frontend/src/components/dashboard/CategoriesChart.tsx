@@ -13,11 +13,23 @@ interface Transaction {
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4'];
 
-export default function CategoriesChart() {
+interface CategoriesChartProps {
+    startDate?: string;
+    endDate?: string;
+    category?: string;
+    onCategorySelect?: (category: string) => void;
+}
+
+export default function CategoriesChart({ startDate, endDate, category, onCategorySelect }: CategoriesChartProps) {
     const { data: transactions, isLoading } = useQuery<Transaction[]>({
-        queryKey: ['transactions'],
+        queryKey: ['transactions', startDate, endDate, category],
         queryFn: async () => {
-            const { data } = await axios.get('http://localhost:8000/api/transactions');
+            const params = new URLSearchParams();
+            if (startDate) params.append('start_date', startDate);
+            if (endDate) params.append('end_date', endDate);
+            if (category && category !== 'all') params.append('category', category);
+
+            const { data } = await axios.get(`http://localhost:8000/api/transactions?${params.toString()}`);
             return data;
         }
     });
@@ -57,12 +69,17 @@ export default function CategoriesChart() {
                         dataKey="value"
                     >
                         {chartData.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                            <Cell
+                                key={`cell-${index}`}
+                                fill={COLORS[index % COLORS.length]}
+                                cursor="pointer"
+                                onClick={() => onCategorySelect && onCategorySelect(entry.name)}
+                            />
                         ))}
                     </Pie>
                     <Tooltip
                         contentStyle={{ backgroundColor: '#1e1e1e', borderColor: '#333', color: '#fff', borderRadius: '8px' }}
-                        formatter={(value: number) => `$${value.toFixed(2)}`}
+                        formatter={(value: any) => `$${Number(value).toFixed(2)}`}
                     />
                     <Legend wrapperStyle={{ fontSize: '12px', color: '#9ca3af' }} />
                 </PieChart>
