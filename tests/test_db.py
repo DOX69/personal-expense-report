@@ -1,11 +1,14 @@
 import unittest
 from unittest.mock import patch, MagicMock
 import pandas as pd
-from app.db import init_db, save_transactions, get_transactions
+import sys
+import os
+sys.path.append(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'app-backend'))
+from db import init_db, save_transactions, get_transactions
 
 class TestDBConsole(unittest.TestCase):
 
-    @patch('app.db.get_db_connection')
+    @patch('db.get_db_connection')
     def test_init_db_success(self, mock_get_conn):
         mock_conn = MagicMock()
         mock_cursor = MagicMock()
@@ -22,7 +25,7 @@ class TestDBConsole(unittest.TestCase):
         mock_cursor.close.assert_called_once()
         mock_conn.close.assert_called_once()
 
-    @patch('app.db.get_db_connection')
+    @patch('db.get_db_connection')
     def test_save_transactions_success(self, mock_get_conn):
         mock_conn = MagicMock()
         mock_cursor = MagicMock()
@@ -47,7 +50,7 @@ class TestDBConsole(unittest.TestCase):
         self.assertTrue("ON DUPLICATE KEY UPDATE" in mock_cursor.executemany.call_args[0][0])
         mock_conn.commit.assert_called_once()
 
-    @patch('app.db.get_db_connection')
+    @patch('db.get_db_connection')
     def test_get_transactions_success(self, mock_get_conn):
         mock_conn = MagicMock()
         mock_cursor = MagicMock()
@@ -62,7 +65,7 @@ class TestDBConsole(unittest.TestCase):
             self.assertTrue(result_df.empty)
             mock_read_sql.assert_called_once()
 
-    @patch('app.db.get_db_connection')
+    @patch('db.get_db_connection')
     def test_save_transactions_failure(self, mock_get_conn):
         mock_get_conn.return_value = None
         df = pd.DataFrame({'col': []})

@@ -2,6 +2,56 @@ import pandas as pd
 from typing import Tuple, List, Optional
 import io
 
+def categorize_transaction(row) -> str:
+    """Categorizes a transaction based on its description and amount."""
+    desc = str(row['description']).lower()
+    amount = float(row['amount'])
+    
+    # Revenus
+    if amount > 0:
+        if any(k in desc for k in ['salaire', 'prime', 'paye']):
+            return 'Revenus - Actifs'
+        elif any(k in desc for k in ['dividende', 'interet', 'loyer']):
+            return 'Revenus - Passifs'
+        elif any(k in desc for k in ['remboursement', 'vinted', 'leboncoin', 'cadeau']):
+            return 'Revenus - Exceptionnels'
+        return 'Revenus - Autre'
+        
+    # Dépenses Fixes
+    if any(k in desc for k in ['loyer', 'syndic', 'taxe foncière']):
+        return 'Dépenses Fixes - Logement'
+    elif any(k in desc for k in ['edf', 'engie', 'totalenergies', 'eau']):
+        return 'Dépenses Fixes - Énergie & Eau'
+    elif any(k in desc for k in ['assurance', 'mutuelle', 'allianz', 'axa', 'macif']):
+        return 'Dépenses Fixes - Assurances'
+    elif any(k in desc for k in ['orange', 'sfr', 'bouygues', 'free', 'icloud', 'google', 'spotify', 'netflix']):
+        return 'Dépenses Fixes - Abonnements Télécom'
+    elif any(k in desc for k in ['navigo', 'cff', 'abonnement transport']):
+        return 'Dépenses Fixes - Transports (Récurrent)'
+        
+    # Dépenses Variables
+    if any(k in desc for k in ['auchan', 'carrefour', 'leclerc', 'monoprix', 'boulangerie', 'franprix']):
+        return 'Dépenses Variables - Alimentation'
+    elif any(k in desc for k in ['restaurant', 'cafe', 'bar', 'deliveroo', 'ubereats', 'mcdo', 'burger king']):
+        return 'Dépenses Variables - Vie Sociale'
+    elif any(k in desc for k in ['sncf', 'total', 'bp', 'tamoil', 'uber', 'taxi', 'parking', 'peage']):
+        return 'Dépenses Variables - Transport (Usage)'
+    elif any(k in desc for k in ['cinema', 'fnac', 'concert', 'musee']):
+        return 'Dépenses Variables - Loisirs & Culture'
+    elif any(k in desc for k in ['zara', 'h&m', 'amazon', 'sephora', 'uniqlo', 'vetement']):
+        return 'Dépenses Variables - Shopping'
+    elif any(k in desc for k in ['pharmacie', 'doctolib', 'medecin', 'dentiste', 'opticien']):
+        return 'Dépenses Variables - Santé'
+        
+    # Dépenses Occasionnelles & Épargne
+    if any(k in desc for k in ['virement vers epargne', 'livret']):
+        return 'Dépenses Occasionnelles - Épargne'
+    elif any(k in desc for k in ['pea', 'assurance-vie', 'crypto', 'binance', 'coinbase']):
+        return 'Dépenses Occasionnelles - Investissement'
+        
+    # Fallback
+    return 'Dépenses Variables - Autre'
+
 def parse_and_validate_csv(file_content, user_id: Optional[int] = None) -> Tuple[pd.DataFrame, List[str]]:
     """
     Parses and validates CSV content.
@@ -60,57 +110,7 @@ def parse_and_validate_csv(file_content, user_id: Optional[int] = None) -> Tuple
             errors.append("Format de date invalide")
             return pd.DataFrame(), errors
 
-        # 4. Auto-categorize
-        def categorize(row):
-            desc = str(row['description']).lower()
-            amount = float(row['amount'])
-            
-            # Revenus
-            if amount > 0:
-                if any(k in desc for k in ['salaire', 'prime', 'paye']):
-                    return 'Revenus - Actifs'
-                elif any(k in desc for k in ['dividende', 'interet', 'loyer']):
-                    return 'Revenus - Passifs'
-                elif any(k in desc for k in ['remboursement', 'vinted', 'leboncoin', 'cadeau']):
-                    return 'Revenus - Exceptionnels'
-                return 'Revenus - Autre'
-                
-            # Dépenses Fixes
-            if any(k in desc for k in ['loyer', 'syndic', 'taxe foncière']):
-                return 'Dépenses Fixes - Logement'
-            elif any(k in desc for k in ['edf', 'engie', 'totalenergies', 'eau']):
-                return 'Dépenses Fixes - Énergie & Eau'
-            elif any(k in desc for k in ['assurance', 'mutuelle', 'allianz', 'axa', 'macif']):
-                return 'Dépenses Fixes - Assurances'
-            elif any(k in desc for k in ['orange', 'sfr', 'bouygues', 'free', 'icloud', 'google', 'spotify', 'netflix']):
-                return 'Dépenses Fixes - Abonnements Télécom'
-            elif any(k in desc for k in ['navigo', 'cff', 'abonnement transport']):
-                return 'Dépenses Fixes - Transports (Récurrent)'
-                
-            # Dépenses Variables
-            if any(k in desc for k in ['auchan', 'carrefour', 'leclerc', 'monoprix', 'boulangerie', 'franprix']):
-                return 'Dépenses Variables - Alimentation'
-            elif any(k in desc for k in ['restaurant', 'cafe', 'bar', 'deliveroo', 'ubereats', 'mcdo', 'burger king']):
-                return 'Dépenses Variables - Vie Sociale'
-            elif any(k in desc for k in ['sncf', 'total', 'bp', 'tamoil', 'uber', 'taxi', 'parking', 'peage']):
-                return 'Dépenses Variables - Transport (Usage)'
-            elif any(k in desc for k in ['cinema', 'fnac', 'concert', 'musee']):
-                return 'Dépenses Variables - Loisirs & Culture'
-            elif any(k in desc for k in ['zara', 'h&m', 'amazon', 'sephora', 'uniqlo', 'vetement']):
-                return 'Dépenses Variables - Shopping'
-            elif any(k in desc for k in ['pharmacie', 'doctolib', 'medecin', 'dentiste', 'opticien']):
-                return 'Dépenses Variables - Santé'
-                
-            # Dépenses Occasionnelles & Épargne
-            if any(k in desc for k in ['virement vers epargne', 'livret']):
-                return 'Dépenses Occasionnelles - Épargne'
-            elif any(k in desc for k in ['pea', 'assurance-vie', 'crypto', 'binance', 'coinbase']):
-                return 'Dépenses Occasionnelles - Investissement'
-                
-            # Fallback
-            return 'Dépenses Variables - Autre'
-                
-        df['category'] = df.apply(categorize, axis=1)
+        df['category'] = df.apply(categorize_transaction, axis=1)
             
         return df, errors
 

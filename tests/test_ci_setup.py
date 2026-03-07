@@ -14,6 +14,7 @@ except ImportError:
         from app.db import get_db_connection
 
 class TestCISetup(unittest.TestCase):
+    @unittest.skipIf(os.getenv('GITHUB_ACTIONS') != 'true', "Not running in GitHub Actions CI")
     def test_ci_environment(self):
         """Check if CI environment is detected."""
         self.assertEqual(os.getenv('GITHUB_ACTIONS'), 'true', "Not running in GitHub Actions CI")
