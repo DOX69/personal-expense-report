@@ -17,12 +17,13 @@ class TestDBConsole(unittest.TestCase):
 
         init_db()
 
-        self.assertTrue(mock_cursor.execute.call_count >= 1)
-        # Check if the CREATE TABLE logic executes
-        create_sql = mock_cursor.execute.call_args_list[0][0][0]
-        self.assertTrue("CREATE TABLE IF NOT EXISTS transactions" in create_sql)
-        mock_conn.commit.assert_called_once()
-        mock_cursor.close.assert_called_once()
+        # Verify dim_categories and transactions tables are created
+        execute_calls = [call[0][0] for call in mock_cursor.execute.call_args_list]
+        self.assertTrue(any("CREATE TABLE IF NOT EXISTS dim_categories" in sql for sql in execute_calls))
+        self.assertTrue(any("CREATE TABLE IF NOT EXISTS transactions" in sql for sql in execute_calls))
+
+        mock_conn.commit.assert_called()
+        self.assertEqual(mock_cursor.close.call_count, 2)
         mock_conn.close.assert_called_once()
 
     @patch('db.get_db_connection')
@@ -37,7 +38,7 @@ class TestDBConsole(unittest.TestCase):
             'description': ['Test'],
             'amount': [100.0],
             'currency': ['EUR'],
-            'category': ['Food'],
+            'category_id': [21],
             'type': ['Card']
         }
         df = pd.DataFrame(data)
@@ -47,7 +48,7 @@ class TestDBConsole(unittest.TestCase):
         self.assertTrue(result)
         mock_cursor.executemany.assert_called_once()
         self.assertTrue("INSERT INTO transactions" in mock_cursor.executemany.call_args[0][0])
-        self.assertTrue("ON DUPLICATE KEY UPDATE" in mock_cursor.executemany.call_args[0][0])
+        self.assertTrue("category_id" in mock_cursor.executemany.call_args[0][0])
         mock_conn.commit.assert_called_once()
 
     @patch('db.get_db_connection')

@@ -81,9 +81,14 @@ flowchart TD
 The project utilizes a **Kimball Star Schema** to ensure high-performance analytical queries and clean data organization:
 - **Fact Table (`transactions`)**: Stores quantitative metrics (amounts) and foreign keys to dimensions. Includes `normalized_description` for better grouping.
 - **Dimension Table (`dim_categories`)**: Stores descriptive attributes for categorization:
-    - `flow_type`: Income, Expense, or Transfer.
-    - `flow_sub_type`: Categorization depth (e.g., active/passive for income).
-    - `is_recurrent`: Boolean flag for subscription/salary tracking.
+    - `flow_type`: `income`, `expense`, or `transfer`.
+    - `flow_sub_type`: 
+        - `income`: `active`, `passive`, `exceptional`, `other`.
+        - `expense`: `fixed`, `variable`, `savings`, `investment`.
+        - `transfer`: `internal`.
+    - `category`: Specific English category name (e.g., `Salary`, `Rent`, `Groceries`).
+    - `is_recurrent`: Boolean flag (0/1) for subscription/salary tracking.
+
 
 #### Component Breakdown
 - **Next.js Frontend**: A modern, responsive SPA using Tailwind CSS for styling and Lucide icons.
@@ -115,6 +120,10 @@ The simplest way to run the project.
    git clone https://github.com/DOX69/personal-expense-report.git
    cd personal-expense-report
    docker-compose up --build -d
+   ```
+3. **Restard without data loss**:
+   ```bash
+   docker compose up -d --build --force-recreate backend frontend db
    ```
 3. **Access**: 
    - App: [http://localhost:3000](http://localhost:3000)
