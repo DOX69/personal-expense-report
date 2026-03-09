@@ -25,7 +25,7 @@ def startup_event():
 def read_root():
     return {"message": "Welcome to Personal Expense Report API"}
 
-def filter_transactions_df(df: pd.DataFrame, start_date: str = None, end_date: str = None, category: str = None) -> pd.DataFrame:
+def filter_transactions_df(df: pd.DataFrame, start_date: str = None, end_date: str = None, category: str = None, flow_type: str = None) -> pd.DataFrame:
     if df.empty or 'date' not in df.columns:
         return df
         
@@ -37,18 +37,26 @@ def filter_transactions_df(df: pd.DataFrame, start_date: str = None, end_date: s
     if category and category != 'all':
         df = df[df['category'] == category]
         
+    if flow_type and flow_type != 'all':
+        df = df[df['flow_type'] == flow_type]
+        
     return df
 
 @app.get("/api/transactions")
-def read_transactions(start_date: str = None, end_date: str = None, category: str = None, search: str = None):
+def read_transactions(start_date: str = None, end_date: str = None, category: str = None, flow_type: str = None, search: str = None):
     df = get_transactions()
     
     if not df.empty:
-        df = filter_transactions_df(df, start_date, end_date, category)
+        df = filter_transactions_df(df, start_date, end_date, category, flow_type)
         
         if search:
             search_term = search.lower()
-            mask = df['description'].str.lower().str.contains(search_term, na=False) | df['category'].str.lower().str.contains(search_term, na=False)
+            # Search in original description, normalized description, and category
+            mask = (
+                df['description'].str.lower().str.contains(search_term, na=False) | 
+                df['normalized_description'].str.lower().str.contains(search_term, na=False) |
+                df['category'].str.lower().str.contains(search_term, na=False)
+            )
             df = df[mask]
 
         if 'date' in df.columns:
@@ -75,16 +83,19 @@ async def upload_csv(file: UploadFile = File(...)):
         return {"success": False, "errors": ["Failed to save transactions to database"]}
 
 @app.get("/api/dashboard/metrics")
-def get_dashboard_metrics(start_date: str = None, end_date: str = None, category: str = None):
+def get_dashboard_metrics(start_date: str = None, end_date: str = None):
     df = get_transactions()
     if df.empty:
         return {"total_income": 0, "total_expense": 0, "net_cashflow": 0}
     
-    df = filter_transactions_df(df, start_date, end_date, category)
+    # Filter by date, but exclude internal transfers from metrics
+    df = filter_transactions_df(df, start_date, end_date)
+    metrics_df = df[df['flow_type'] != 'transfer']
     
-    total_income = df[df['amount'] > 0]['amount'].sum()
-    total_expense = df[df['amount'] < 0]['amount'].sum()
+    total_income = metrics_df[metrics_df['flow_type'] == 'income']['amount'].sum()
+    total_expense = metrics_df[metrics_df['flow_type'] == 'expense']['amount'].sum()
     net_cashflow = total_income + total_expense
+    
     return {
         "total_income": float(total_income),
         "total_expense": float(total_expense),
@@ -98,29 +109,30 @@ def get_sankey_data(start_date: str = None, end_date: str = None):
         return {"nodes": [], "links": []}
         
     df = filter_transactions_df(df, start_date, end_date)
+    # Exclude internal transfers as they are not "flows" in/out of the system
+    df = df[df['flow_type'] != 'transfer']
     
-    income_df = df[df['amount'] > 0]
-    expense_df = df[df['amount'] < 0]
+    income_df = df[df['flow_type'] == 'income']
+    expense_df = df[df['flow_type'] == 'expense']
     
     income_cats = income_df.groupby('category')['amount'].sum().reset_index()
     expense_cats = expense_df.groupby('category')['amount'].sum().abs().reset_index()
     
-    # Build strictly unidirectional: Income Sources -> Current Account -> Expense Categories
-    # Use unique suffixes to avoid bidirectional node references
+    # Build unique node labels
     labels = []
     
-    # Income source nodes (left side)
+    # Income source nodes
     for _, row in income_cats.iterrows():
         labels.append(f"{row['category']} (Income)")
     
     # Central node
     labels.append("Current Account")
     
-    # Expense category nodes (right side)
+    # Expense category nodes
     for _, row in expense_cats.iterrows():
         labels.append(f"{row['category']} (Expense)")
     
-    # Net savings node if applicable
+    # Net savings node
     net_cashflow = income_cats['amount'].sum() - expense_cats['amount'].sum()
     if net_cashflow > 0:
         labels.append("Savings")

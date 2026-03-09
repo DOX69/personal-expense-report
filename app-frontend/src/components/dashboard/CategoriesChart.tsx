@@ -9,6 +9,7 @@ interface Transaction {
     date: string;
     amount: number;
     category: string;
+    flow_type: string;
 }
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4'];
@@ -41,7 +42,7 @@ export default function CategoriesChart({ startDate, endDate, category, onCatego
 
         transactions.forEach(t => {
             // Only show expenses for category breakdown
-            if (t.amount < 0) {
+            if (t.flow_type === 'expense') {
                 const cat = t.category || 'Other';
                 categoryTotals[cat] = (categoryTotals[cat] || 0) + Math.abs(t.amount);
             }

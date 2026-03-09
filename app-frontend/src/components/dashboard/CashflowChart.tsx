@@ -9,6 +9,7 @@ import { useMemo } from 'react';
 interface Transaction {
     date: string;
     amount: number;
+    flow_type: string;
 }
 
 interface CashflowChartProps {
@@ -42,7 +43,7 @@ export default function CashflowChart({ startDate, endDate, category, onMonthSel
         const sorted = [...transactions].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
         sorted.forEach(t => {
-            if (!t.date) return;
+            if (!t.date || t.flow_type === 'transfer') return;
             const date = parseISO(t.date);
             const monthKey = format(date, 'MMM yy');
 
@@ -56,9 +57,9 @@ export default function CashflowChart({ startDate, endDate, category, onMonthSel
                 };
             }
 
-            if (t.amount > 0) {
+            if (t.flow_type === 'income') {
                 monthlyData[monthKey].income += t.amount;
-            } else {
+            } else if (t.flow_type === 'expense') {
                 monthlyData[monthKey].expense += Math.abs(t.amount);
             }
         });

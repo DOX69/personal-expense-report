@@ -25,11 +25,10 @@ The project was recently migrated to a modern decoupled stack:
 ### Architecture
 
 ```mermaid
-flowchart LR
+flowchart TD
     %% Definitions
     User(("👤 User"))
 
-    %% Frontend Subgraph
     subgraph Frontend ["🖥️ App Frontend (Next.js)"]
         direction TB
         UI["User Interface
@@ -38,7 +37,6 @@ flowchart LR
         UI -.-> Charts
     end
 
-    %% Backend Subgraph
     subgraph Backend ["⚙️ App Backend (FastAPI)"]
         direction TB
         API["🔌 API Endpoints"]
@@ -49,11 +47,11 @@ flowchart LR
         API <--> DBLogic
     end
 
-    %% Storage Subgraph
-    subgraph Storage ["💾 Data Storage"]
+    subgraph Storage ["💾 Data Storage (Kimball Star Schema)"]
         direction TB
-        CSV[/"📄 transactions.csv"/]
-        MySQL[("🐬 MySQL Database")]
+        Fact[("� Fact: Transactions")]
+        Dim[("� Dim: Categories")]
+        Fact -- "FK: category_id" --> Dim
     end
 
     %% Interactions
@@ -63,10 +61,9 @@ flowchart LR
     UI -- "Fetches Metrics & Data" --> API
     UI -- "Sends File" --> API
 
-    Pandas -- "Reads/Updates" --> CSV
-    Pandas -- "Parsed Data" --> DBLogic
-
-    DBLogic <--> MySQL
+    Pandas -- "Categorization Logic" --> API
+    DBLogic <--> Fact
+    DBLogic <--> Dim
 
     %% Styling
     classDef frontend fill:#E3F2FD,stroke:#2196F3,stroke-width:2px,color:#0D47A1;
@@ -76,41 +73,30 @@ flowchart LR
 
     class Frontend,UI,Charts frontend;
     class Backend,API,Pandas,DBLogic backend;
-    class Storage,CSV,MySQL storage;
+    class Storage,Fact,Dim storage;
     class User user;
 ```
+
+#### Analytical Data Model (Star Schema)
+The project utilizes a **Kimball Star Schema** to ensure high-performance analytical queries and clean data organization:
+- **Fact Table (`transactions`)**: Stores quantitative metrics (amounts) and foreign keys to dimensions. Includes `normalized_description` for better grouping.
+- **Dimension Table (`dim_categories`)**: Stores descriptive attributes for categorization:
+    - `flow_type`: Income, Expense, or Transfer.
+    - `flow_sub_type`: Categorization depth (e.g., active/passive for income).
+    - `is_recurrent`: Boolean flag for subscription/salary tracking.
 
 #### Component Breakdown
 - **Next.js Frontend**: A modern, responsive SPA using Tailwind CSS for styling and Lucide icons.
 - **FastAPI Backend**: A high-performance Python API handling business logic and data orchestration.
-- **Pandas Processor**: Handles complex CSV manipulations, auto-categorization of expenses, and duplicate detection.
-- **Hybrid Storage**: Uses `transactions.csv` for flat-file portability and **MySQL** for robust relational storage and persistence.
-
-```text
-personal-expense-report/
-├── app-frontend/               # React Next.js Application (User Interface)
-│   ├── src/
-│   │   ├── app/                # Next.js Pages (Dashboard, Transactions, Budgets...)
-│   │   └── components/         # React Components (Charts, UI, Layout)
-│   ├── package.json            # Node.js Dependencies
-│   └── tailwind.config.ts      # Tailwind CSS Configuration
-├── app-backend/                # FastAPI Python API
-│   ├── main.py                 # FastAPI Entry Point (REST Endpoints)
-│   ├── db.py                   # MySQL Connector and SQL queries.
-│   ├── data_processor.py       # CSV processing logic and auto-categorization.
-│   └── tests/                  # Unit and integration test suite (Pytest).
-├── tests/                      # Old global or e2e tests
-├── sample-data/                # (Optional) Sample datasets.
-├── docker-compose.yml          # Orchestration of app-frontend, app-backend and db (MySQL) services.
-├── requirements.txt            # Python dependencies.
-└── pyproject.toml              # Python project metadata (version, deps, tooling).
-```
+- **Pandas Processor**: Handles complex CSV manipulations, deterministic keyword-based auto-categorization, and description normalization.
+- **MySQL Storage**: Robust relational database using a star schema for persistence and analytical flexibility.
 
 #### Data Lifecycle
-1. **The user** uploads one or more `CSV` files from the Upload interface (or Drag & Drop in Transactions).
-2. The FastAPI API via `data_processor.py` reads it, cleans it, checks for duplicates and applies auto-categorization based on the transaction "Description" column.
-3. This newly normalized data is saved in the MySQL database via `db.py`.
-4. **The user** can consult the "Dashboard" tab to visualize their expenses. The Next.js frontend queries the FastAPI endpoints to generate the Recharts graphics (Cashflow, KPIs, Sankey).
+1. **Upload**: User uploads CSV bank statements.
+2. **Standardization**: `data_processor.py` cleans descriptions and normalizes date/amount formats.
+3. **Categorization**: Transactions are mapped to English categories in `dim_categories` using a deterministic keyword-matching engine.
+4. **Persistence**: Validated and categorized data is stored in the Star Schema.
+5. **Visualization**: Backend calculates metrics (KPIs) by joining facts and dimensions, excluding internal transfers for accurate cashflow analysis.
 
 ### How it works ?
 The project is completely containerized. Without any software dependency other than Docker, you can run the application and its associated database.

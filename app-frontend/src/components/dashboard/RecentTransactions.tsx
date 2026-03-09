@@ -11,32 +11,46 @@ interface Transaction {
     id: number;
     date: string;
     description: string;
+    normalized_description: string;
     amount: number;
     currency: string;
     category: string;
+    flow_type: string;
+    flow_sub_type: string;
 }
 
 interface RecentTransactionsProps {
     startDate?: string;
     endDate?: string;
     category?: string;
+    flowType?: string;
     search?: string;
 }
 
-export default function RecentTransactions({ startDate, endDate, category, search }: RecentTransactionsProps) {
+export default function RecentTransactions({ startDate, endDate, category, flowType, search }: RecentTransactionsProps) {
     const { data: transactions, isLoading } = useQuery<Transaction[]>({
-        queryKey: ['transactions', startDate, endDate, category, search],
+        queryKey: ['transactions', startDate, endDate, category, flowType, search],
         queryFn: async () => {
             const params = new URLSearchParams();
             if (startDate) params.append('start_date', startDate);
             if (endDate) params.append('end_date', endDate);
             if (category && category !== 'all') params.append('category', category);
+            if (flowType && flowType !== 'all') params.append('flow_type', flowType);
             if (search) params.append('search', search);
 
             const { data } = await axios.get(`http://localhost:8000/api/transactions?${params.toString()}`);
             return data;
         }
     });
+
+    const getFlowTypeColor = (flowType: string) => {
+        switch (flowType?.toLowerCase()) {
+            case 'income': return 'bg-green-500/10 text-green-400 border-green-500/20';
+            case 'expense': return 'bg-red-500/10 text-red-400 border-red-500/20';
+            case 'transfer': return 'bg-blue-500/10 text-blue-400 border-blue-500/20';
+            default: return 'bg-gray-500/10 text-gray-400 border-gray-500/20';
+        }
+    };
 
     return (
         <div className="bg-[#1e1e1e] border border-[#333] rounded-2xl overflow-hidden flex flex-col h-full">
@@ -58,10 +72,11 @@ export default function RecentTransactions({ startDate, endDate, category, searc
                     </div>
                 ) : (
                     <table className="w-full text-left border-collapse">
-                        <thead className="sticky top-0 bg-[#1e1e1e] border-b border-[#333] shadow-sm">
+                        <thead className="sticky top-0 bg-[#1e1e1e] border-b border-[#333] shadow-sm z-10">
                             <tr>
                                 <th className="py-3 px-6 text-xs font-semibold text-gray-400 uppercase tracking-wider">Date</th>
                                 <th className="py-3 px-6 text-xs font-semibold text-gray-400 uppercase tracking-wider">Description</th>
+                                <th className="py-3 px-6 text-xs font-semibold text-gray-400 uppercase tracking-wider text-center">Type</th>
                                 <th className="py-3 px-6 text-xs font-semibold text-gray-400 uppercase tracking-wider">Category</th>
                                 <th className="py-3 px-6 text-xs font-semibold text-gray-400 uppercase tracking-wider text-right">Amount</th>
                             </tr>
@@ -73,7 +88,24 @@ export default function RecentTransactions({ startDate, endDate, category, searc
                                         {t.date ? format(parseISO(t.date), 'MMM dd, yyyy') : 'N/A'}
                                     </td>
                                     <td className="py-3 px-6 text-sm font-medium text-gray-200">
-                                        <div className="max-w-[200px] truncate">{t.description}</div>
+                                        <div className="flex flex-col">
+                                            <div className="max-w-[200px] truncate" title={t.description}>
+                                                {t.normalized_description || t.description}
+                                            </div>
+                                            {t.normalized_description && (
+                                                <div className="text-[10px] text-gray-500 truncate max-w-[200px]">
+                                                    {t.description}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </td>
+                                    <td className="py-3 px-6 text-xs text-center">
+                                        <span className={clsx(
+                                            "px-2 py-0.5 rounded border text-[10px] font-bold uppercase tracking-tighter",
+                                            getFlowTypeColor(t.flow_type)
+                                        )}>
+                                            {t.flow_type || 'Unknown'}
+                                        </span>
                                     </td>
                                     <td className="py-3 px-6 text-sm">
                                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-[#333] text-gray-300">
@@ -82,7 +114,8 @@ export default function RecentTransactions({ startDate, endDate, category, searc
                                     </td>
                                     <td className={clsx(
                                         "py-3 px-6 text-sm font-medium text-right whitespace-nowrap",
-                                        t.amount > 0 ? "text-green-400" : "text-white"
+                                        t.flow_type === 'income' ? "text-green-400" :
+                                            t.flow_type === 'expense' ? "text-white" : "text-blue-400"
                                     )}>
                                         {t.amount > 0 ? '+' : ''}{t.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {t.currency}
                                     </td>

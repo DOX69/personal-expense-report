@@ -20,6 +20,7 @@ export default function Dashboard() {
   const [period, setPeriod] = useState('this_month');
   const [category, setCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [flowType, setFlowType] = useState('all');
   const [customMonth, setCustomMonth] = useState<{ month: number; year: number } | null>(null);
 
   // Convert period to start_date and end_date
@@ -44,6 +45,7 @@ export default function Dashboard() {
   const handleReset = () => {
     setPeriod('all');
     setCategory('all');
+    setFlowType('all');
     setSearchQuery('');
     setCustomMonth(null);
   };
@@ -54,12 +56,11 @@ export default function Dashboard() {
   };
 
   const { data: metrics, isLoading } = useQuery<DashboardMetrics>({
-    queryKey: ['dashboard-metrics', startDate, endDate, category],
+    queryKey: ['dashboard-metrics', startDate, endDate],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (startDate) params.append('start_date', startDate);
       if (endDate) params.append('end_date', endDate);
-      if (category !== 'all') params.append('category', category);
 
       const { data } = await axios.get(`http://localhost:8000/api/dashboard/metrics?${params.toString()}`);
       return data;
@@ -106,6 +107,22 @@ export default function Dashboard() {
           </div>
 
           <div className="flex flex-col space-y-1">
+            <label htmlFor="flow-type-select" className="text-xs text-gray-400 font-medium uppercase tracking-wider">Flow Type</label>
+            <select
+              id="flow-type-select"
+              aria-label="Flow Type"
+              value={flowType}
+              onChange={(e) => setFlowType(e.target.value)}
+              className="bg-[#2a2a2a] border border-[#444] text-white text-sm rounded-lg focus:ring-[#4ade80] focus:border-[#4ade80] block w-full p-2.5 outline-none"
+            >
+              <option value="all">All Types</option>
+              <option value="income">Income</option>
+              <option value="expense">Expense</option>
+              <option value="transfer">Transfer</option>
+            </select>
+          </div>
+
+          <div className="flex flex-col space-y-1">
             <label htmlFor="category-select" className="text-xs text-gray-400 font-medium uppercase tracking-wider">Category</label>
             <select
               id="category-select"
@@ -115,13 +132,33 @@ export default function Dashboard() {
               className="bg-[#2a2a2a] border border-[#444] text-white text-sm rounded-lg focus:ring-[#4ade80] focus:border-[#4ade80] block w-full p-2.5 outline-none"
             >
               <option value="all">All Categories</option>
-              <option value="Food & Dining">Food & Dining</option>
-              <option value="Transport">Transport</option>
-              <option value="Shopping">Shopping</option>
-              <option value="Utilities">Utilities</option>
-              <option value="Entertainment">Entertainment</option>
-              <option value="Housing">Housing</option>
-              <option value="Salary">Salary</option>
+              <optgroup label="Income" className="bg-[#1e1e1e] text-green-400">
+                <option value="Salary">Salary</option>
+                <option value="Dividends">Dividends</option>
+                <option value="Interest">Interest</option>
+                <option value="Rent">Rent</option>
+                <option value="Refund">Refund</option>
+                <option value="Gift">Gift</option>
+                <option value="Other Income">Other Income</option>
+              </optgroup>
+              <optgroup label="Expense" className="bg-[#1e1e1e] text-red-400">
+                <option value="Housing">Housing</option>
+                <option value="Energy & Water">Energy & Water</option>
+                <option value="Insurance">Insurance</option>
+                <option value="Telecom">Telecom</option>
+                <option value="Groceries">Groceries</option>
+                <option value="Transport">Transport</option>
+                <option value="Dining Out">Dining Out</option>
+                <option value="Shopping">Shopping</option>
+                <option value="Leisure & Culture">Leisure & Culture</option>
+                <option value="Health">Health</option>
+                <option value="Other">Other</option>
+              </optgroup>
+              <optgroup label="Other" className="bg-[#1e1e1e] text-gray-400">
+                <option value="Savings">Savings</option>
+                <option value="Investment">Investment</option>
+                <option value="Currency Transfer">Currency Transfer</option>
+              </optgroup>
             </select>
           </div>
 
@@ -205,7 +242,13 @@ export default function Dashboard() {
       <CashflowSankey startDate={startDate} endDate={endDate} />
 
       <div className="h-[600px]">
-        <RecentTransactions startDate={startDate} endDate={endDate} category={category} search={searchQuery} />
+        <RecentTransactions
+          startDate={startDate}
+          endDate={endDate}
+          category={category}
+          flowType={flowType}
+          search={searchQuery}
+        />
       </div>
     </div>
   );

@@ -1,56 +1,104 @@
 import pandas as pd
-from typing import Tuple, List, Optional
+from typing import Tuple, List, Optional, Dict
 import io
+import re
 
-def categorize_transaction(row) -> str:
-    """Categorizes a transaction based on its description and amount."""
+# Kimball star schema - Category Dimension seed data
+CATEGORY_SEED_DATA = [
+    {"id": 1, "flow_type": "income", "flow_sub_type": "active", "category": "salary", "is_recurrent": True},
+    {"id": 2, "flow_type": "income", "flow_sub_type": "passive", "category": "dividends", "is_recurrent": False},
+    {"id": 3, "flow_type": "income", "flow_sub_type": "passive", "category": "interest", "is_recurrent": True},
+    {"id": 4, "flow_type": "income", "flow_sub_type": "passive", "category": "rent", "is_recurrent": True},
+    {"id": 5, "flow_type": "income", "flow_sub_type": "exceptional", "category": "refund", "is_recurrent": False},
+    {"id": 6, "flow_type": "income", "flow_sub_type": "exceptional", "category": "gift", "is_recurrent": False},
+    {"id": 7, "flow_type": "income", "flow_sub_type": "other", "category": "other_income", "is_recurrent": False},
+    
+    {"id": 10, "flow_type": "expense", "flow_sub_type": "fixed", "category": "housing", "is_recurrent": True},
+    {"id": 11, "flow_type": "expense", "flow_sub_type": "fixed", "category": "energy_water", "is_recurrent": True},
+    {"id": 12, "flow_type": "expense", "flow_sub_type": "fixed", "category": "insurance", "is_recurrent": True},
+    {"id": 13, "flow_type": "expense", "flow_sub_type": "fixed", "category": "telecom", "is_recurrent": True},
+    {"id": 14, "flow_type": "expense", "flow_sub_type": "fixed", "category": "transport_subscription", "is_recurrent": True},
+    
+    {"id": 20, "flow_type": "expense", "flow_sub_type": "variable", "category": "groceries", "is_recurrent": False},
+    {"id": 21, "flow_type": "expense", "flow_sub_type": "variable", "category": "dining_out", "is_recurrent": False},
+    {"id": 22, "flow_type": "expense", "flow_sub_type": "variable", "category": "transport", "is_recurrent": False},
+    {"id": 23, "flow_type": "expense", "flow_sub_type": "variable", "category": "leisure_culture", "is_recurrent": False},
+    {"id": 24, "flow_type": "expense", "flow_sub_type": "variable", "category": "shopping", "is_recurrent": False},
+    {"id": 25, "flow_type": "expense", "flow_sub_type": "variable", "category": "health", "is_recurrent": False},
+    {"id": 26, "flow_type": "expense", "flow_sub_type": "variable", "category": "other", "is_recurrent": False},
+    
+    {"id": 30, "flow_type": "expense", "flow_sub_type": "savings", "category": "savings", "is_recurrent": True},
+    {"id": 31, "flow_type": "expense", "flow_sub_type": "investment", "category": "investment", "is_recurrent": False},
+    
+    {"id": 40, "flow_type": "transfer", "flow_sub_type": "internal", "category": "currency_transfer", "is_recurrent": False},
+]
+
+def build_keyword_to_category_id_map() -> Dict[str, int]:
+    """Returns a dictionary mapping keywords to category IDs."""
+    return {
+        # Salary
+        'decideom': 1, 'mondial relay': 1, 'salaire': 1, 'paye': 1,
+        # Income - Passive/Exceptional
+        'dividende': 2, 'interet': 3, 'loyer': 4, 'remboursement': 5, 'refund': 5, 'vinted': 5, 'cadeau': 6,
+        # Housing
+        'syndic': 10, 'taxe foncière': 10,
+        # Energy
+        'edf': 11, 'engie': 11, 'totalenergies': 11, 'eau': 11,
+        # Insurance
+        'assurance': 12, 'mutuelle': 12, 'allianz': 12, 'axa': 12, 'macif': 12,
+        # Telecom
+        'orange': 13, 'sfr': 13, 'bouygues': 13, 'free': 13, 'icloud': 13, 'google': 13, 'spotify': 13, 'netflix': 13, 'amazon prime': 13,
+        # Transport Subscription
+        'navigo': 14, 'abonnement transport': 14,
+        # Groceries
+        'auchan': 20, 'carrefour': 20, 'leclerc': 20, 'monoprix': 20, 'franprix': 20, 'match': 20, 'aldi': 20, 'lidl': 20,
+        # Dining Out
+        'restaurant': 21, 'cafe': 21, 'bar': 21, 'deliveroo': 21, 'ubereats': 21, 'mcdo': 21, 'burger king': 21, 'starbucks': 21,
+        # Transport (Usage)
+        'sncf': 22, 'sbb cff ffs': 22, 'cff': 22, 'uber': 22, 'taxi': 22, 'parking': 22, 'peage': 22, 'tamoil': 22, 'bp': 22, 'total': 22, 'shell': 22,
+        # Leisure / Culture
+        'cinema': 23, 'fnac': 23, 'concert': 23, 'musee': 23, 'netflix': 23,
+        # Shopping
+        'zara': 24, 'h&m': 24, 'amazon': 24, 'sephora': 24, 'uniqlo': 24, 'vetement': 24,
+        # Health
+        'pharmacie': 25, 'doctolib': 25, 'medecin': 25, 'dentiste': 25, 'opticien': 25,
+        # Savings / Investment
+        'epargne': 30, 'livret': 30, 'pea': 31, 'assurance-vie': 31, 'crypto': 31, 'binance': 31, 'coinbase': 31,
+        # Transfers
+        'change en': 40, 'change de': 40,
+    }
+
+KEYWORD_MAP = build_keyword_to_category_id_map()
+
+def normalize_description(desc: str) -> str:
+    """Cleans up banking descriptions for display."""
+    if not desc:
+        return ""
+    
+    # Remove common transaction numbers / dates often embedded in descriptions
+    # e.g., "SBB CFF FFS 12345678" -> "SBB CFF FFS"
+    cleaned = re.sub(r'\d{5,}', '', desc) # Remove 5+ consecutive digits
+    cleaned = cleaned.strip()
+    
+    # Title Case
+    return cleaned.title()
+
+def categorize_transaction(row) -> int:
+    """Categorizes a transaction based on its description and amount. Returns dim_categories.id."""
     desc = str(row['description']).lower()
     amount = float(row['amount'])
     
-    # Revenus
+    # 1. Check Keywords - Sort by length descending to match most specific first
+    sorted_keywords = sorted(KEYWORD_MAP.keys(), key=len, reverse=True)
+    for keyword in sorted_keywords:
+        if keyword in desc:
+            return KEYWORD_MAP[keyword]
+            
+    # 2. Heuristics based on amount if no keyword matched
     if amount > 0:
-        if any(k in desc for k in ['salaire', 'prime', 'paye']):
-            return 'Revenus - Actifs'
-        elif any(k in desc for k in ['dividende', 'interet', 'loyer']):
-            return 'Revenus - Passifs'
-        elif any(k in desc for k in ['remboursement', 'vinted', 'leboncoin', 'cadeau']):
-            return 'Revenus - Exceptionnels'
-        return 'Revenus - Autre'
-        
-    # Dépenses Fixes
-    if any(k in desc for k in ['loyer', 'syndic', 'taxe foncière']):
-        return 'Dépenses Fixes - Logement'
-    elif any(k in desc for k in ['edf', 'engie', 'totalenergies', 'eau']):
-        return 'Dépenses Fixes - Énergie & Eau'
-    elif any(k in desc for k in ['assurance', 'mutuelle', 'allianz', 'axa', 'macif']):
-        return 'Dépenses Fixes - Assurances'
-    elif any(k in desc for k in ['orange', 'sfr', 'bouygues', 'free', 'icloud', 'google', 'spotify', 'netflix']):
-        return 'Dépenses Fixes - Abonnements Télécom'
-    elif any(k in desc for k in ['navigo', 'cff', 'abonnement transport']):
-        return 'Dépenses Fixes - Transports (Récurrent)'
-        
-    # Dépenses Variables
-    if any(k in desc for k in ['auchan', 'carrefour', 'leclerc', 'monoprix', 'boulangerie', 'franprix']):
-        return 'Dépenses Variables - Alimentation'
-    elif any(k in desc for k in ['restaurant', 'cafe', 'bar', 'deliveroo', 'ubereats', 'mcdo', 'burger king']):
-        return 'Dépenses Variables - Vie Sociale'
-    elif any(k in desc for k in ['sncf', 'total', 'bp', 'tamoil', 'uber', 'taxi', 'parking', 'peage']):
-        return 'Dépenses Variables - Transport (Usage)'
-    elif any(k in desc for k in ['cinema', 'fnac', 'concert', 'musee']):
-        return 'Dépenses Variables - Loisirs & Culture'
-    elif any(k in desc for k in ['zara', 'h&m', 'amazon', 'sephora', 'uniqlo', 'vetement']):
-        return 'Dépenses Variables - Shopping'
-    elif any(k in desc for k in ['pharmacie', 'doctolib', 'medecin', 'dentiste', 'opticien']):
-        return 'Dépenses Variables - Santé'
-        
-    # Dépenses Occasionnelles & Épargne
-    if any(k in desc for k in ['virement vers epargne', 'livret']):
-        return 'Dépenses Occasionnelles - Épargne'
-    elif any(k in desc for k in ['pea', 'assurance-vie', 'crypto', 'binance', 'coinbase']):
-        return 'Dépenses Occasionnelles - Investissement'
-        
-    # Fallback
-    return 'Dépenses Variables - Autre'
+        return 7  # other_income
+    
+    return 26 # other expense
 
 def parse_and_validate_csv(file_content, user_id: Optional[int] = None) -> Tuple[pd.DataFrame, List[str]]:
     """
@@ -64,10 +112,8 @@ def parse_and_validate_csv(file_content, user_id: Optional[int] = None) -> Tuple
     
     try:
         if isinstance(file_content, str):
-            # If input is string, convert to StringIO
             content = io.StringIO(file_content)
         else:
-            # Assume it's a file-like object (e.g. from streamlit uploader or StringIO)
             content = file_content
             
         df = pd.read_csv(content)
@@ -110,7 +156,9 @@ def parse_and_validate_csv(file_content, user_id: Optional[int] = None) -> Tuple
             errors.append("Format de date invalide")
             return pd.DataFrame(), errors
 
-        df['category'] = df.apply(categorize_transaction, axis=1)
+        # 4. New Categorization logic
+        df['category_id'] = df.apply(categorize_transaction, axis=1)
+        df['normalized_description'] = df['description'].apply(normalize_description)
             
         return df, errors
 
