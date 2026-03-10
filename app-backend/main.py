@@ -14,10 +14,10 @@ app.add_middleware(
 )
 
 try:
-    from .db import init_db, get_transactions, save_transactions
+    from .db import init_db, get_transactions, save_transactions, get_categories
     from .data_processor import parse_and_validate_csv
 except (ImportError, ValueError):
-    from db import init_db, get_transactions, save_transactions
+    from db import init_db, get_transactions, save_transactions, get_categories
     from data_processor import parse_and_validate_csv
 from fastapi import UploadFile, File
 
@@ -39,12 +39,18 @@ def filter_transactions_df(df: pd.DataFrame, start_date: str = None, end_date: s
         df = df[df['date'] <= pd.to_datetime(end_date)]
         
     if category and category != 'all':
-        df = df[df['category'] == category]
+        # Handle multiple categories (comma separated)
+        cat_list = [c.strip() for c in category.split(',')]
+        df = df[df['category'].isin(cat_list)]
         
     if flow_type and flow_type != 'all':
         df = df[df['flow_type'] == flow_type]
         
     return df
+
+@app.get("/api/categories")
+def read_categories():
+    return get_categories()
 
 @app.get("/api/transactions")
 def read_transactions(start_date: str = None, end_date: str = None, category: str = None, flow_type: str = None, search: str = None):
@@ -55,10 +61,9 @@ def read_transactions(start_date: str = None, end_date: str = None, category: st
         
         if search:
             search_term = search.lower()
-            # Search in original description, normalized description, and category
+            # Search in original description and category
             mask = (
                 df['description'].str.lower().str.contains(search_term, na=False) | 
-                df['normalized_description'].str.lower().str.contains(search_term, na=False) |
                 df['category'].str.lower().str.contains(search_term, na=False)
             )
             df = df[mask]

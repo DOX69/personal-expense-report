@@ -79,7 +79,7 @@ flowchart TD
 
 #### Analytical Data Model (Star Schema)
 The project utilizes a **Kimball Star Schema** to ensure high-performance analytical queries and clean data organization:
-- **Fact Table (`transactions`)**: Stores quantitative metrics (amounts) and foreign keys to dimensions. Includes `normalized_description` for better grouping.
+- **Fact Table (`transactions`)**: Stores quantitative metrics (amounts) and foreign keys to dimensions.
 - **Dimension Table (`dim_categories`)**: Stores descriptive attributes for categorization:
     - `flow_type`: `income`, `expense`, or `transfer`.
     - `flow_sub_type`: 
@@ -93,12 +93,12 @@ The project utilizes a **Kimball Star Schema** to ensure high-performance analyt
 #### Component Breakdown
 - **Next.js Frontend**: A modern, responsive SPA using Tailwind CSS for styling and Lucide icons.
 - **FastAPI Backend**: A high-performance Python API handling business logic and data orchestration.
-- **Pandas Processor**: Handles complex CSV manipulations, deterministic keyword-based auto-categorization, and description normalization.
+- **Pandas Processor**: Handles complex CSV manipulations and deterministic keyword-based auto-categorization.
 - **MySQL Storage**: Robust relational database using a star schema for persistence and analytical flexibility.
 
 #### Data Lifecycle
 1. **Upload**: User uploads CSV bank statements.
-2. **Standardization**: `data_processor.py` cleans descriptions and normalizes date/amount formats.
+2. **Standardization**: `data_processor.py` cleans descriptions and standardizes date/amount formats.
 3. **Categorization**: Transactions are mapped to English categories in `dim_categories` using a deterministic keyword-matching engine.
 4. **Persistence**: Validated and categorized data is stored in the Star Schema.
 5. **Visualization**: Backend calculates metrics (KPIs) by joining facts and dimensions, excluding internal transfers for accurate cashflow analysis.

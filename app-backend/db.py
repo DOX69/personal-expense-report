@@ -19,28 +19,27 @@ def get_db_connection():
         return None
 
 try:
-    from .data_processor import CATEGORY_SEED_DATA, categorize_transaction, normalize_description
+    from .data_processor import CATEGORY_SEED_DATA, categorize_transaction
 except (ImportError, ValueError):
-    from data_processor import CATEGORY_SEED_DATA, categorize_transaction, normalize_description
+    from data_processor import CATEGORY_SEED_DATA, categorize_transaction
 
 def migrate_existing_transactions(conn):
     """Re-categorizes all existing transactions after schema upgrade."""
     try:
         cursor = conn.cursor(dictionary=True)
         # Select rows that need re-categorization
-        cursor.execute("SELECT id, description, amount FROM transactions WHERE category_id IS NULL OR normalized_description IS NULL")
+        cursor.execute("SELECT id, description, amount FROM transactions WHERE category_id IS NULL")
         rows = cursor.fetchall()
         
         if not rows:
             return
             
         print(f"Migrating {len(rows)} transactions...")
-        update_query = "UPDATE transactions SET category_id = %s, normalized_description = %s WHERE id = %s"
+        update_query = "UPDATE transactions SET category_id = %s WHERE id = %s"
         update_data = []
         for row in rows:
             cat_id = categorize_transaction(row)
-            norm_desc = normalize_description(row['description'])
-            update_data.append((cat_id, norm_desc, row['id']))
+            update_data.append((cat_id, row['id']))
             
         cursor.executemany(update_query, update_data)
         conn.commit()
@@ -70,29 +69,30 @@ def init_db():
                     )
                 """)
                 
-                # 2. Seed dim_categories if empty
-                cursor.execute("SELECT COUNT(*) FROM dim_categories")
-                if cursor.fetchone()[0] == 0:
-                    seed_query = """
-                        INSERT INTO dim_categories (id, flow_type, flow_sub_type, category, is_recurrent)
-                        VALUES (%s, %s, %s, %s, %s)
-                    """
-                    seed_data = [
-                        (c['id'], c['flow_type'], c['flow_sub_type'], c['category'], c['is_recurrent'])
-                        for c in CATEGORY_SEED_DATA
-                    ]
-                    cursor.executemany(seed_query, seed_data)
+                # 2. Seed/Update dim_categories
+                seed_query = """
+                    INSERT INTO dim_categories (id, flow_type, flow_sub_type, category, is_recurrent)
+                    VALUES (%s, %s, %s, %s, %s)
+                    ON DUPLICATE KEY UPDATE 
+                        flow_type = VALUES(flow_type),
+                        flow_sub_type = VALUES(flow_sub_type),
+                        category = VALUES(category),
+                        is_recurrent = VALUES(is_recurrent)
+                """
+                seed_data = [
+                    (c['id'], c['flow_type'], c['flow_sub_type'], c['category'], c['is_recurrent'])
+                    for c in CATEGORY_SEED_DATA
+                ]
+                cursor.executemany(seed_query, seed_data)
                 
-                # 3. Create transactions table with new columns
+                # 3. Create transactions table (removed old 'category' column)
                 cursor.execute("""
                     CREATE TABLE IF NOT EXISTS transactions (
                         id INT AUTO_INCREMENT PRIMARY KEY,
                         start_date DATETIME NOT NULL,
                         description VARCHAR(500) NOT NULL,
-                        normalized_description VARCHAR(500),
                         amount FLOAT NOT NULL,
                         currency VARCHAR(10) NOT NULL,
-                        category VARCHAR(255),
                         category_id INT,
                         type VARCHAR(255),
                         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -109,9 +109,15 @@ def init_db():
                         cursor.execute("ALTER TABLE transactions ADD CONSTRAINT fk_category FOREIGN KEY (category_id) REFERENCES dim_categories(id)")
                     except: pass # Might already exist if previous run partially failed
 
+                # Remove legacy 'normalized_description' column if it exists
                 cursor.execute("SHOW COLUMNS FROM transactions LIKE 'normalized_description'")
-                if not cursor.fetchone():
-                    cursor.execute("ALTER TABLE transactions ADD COLUMN normalized_description VARCHAR(500)")
+                if cursor.fetchone():
+                    cursor.execute("ALTER TABLE transactions DROP COLUMN normalized_description")
+
+                # Remove legacy 'category' column if it exists
+                cursor.execute("SHOW COLUMNS FROM transactions LIKE 'category'")
+                if cursor.fetchone():
+                    cursor.execute("ALTER TABLE transactions DROP COLUMN category")
 
                 conn.commit()
                 
@@ -138,10 +144,9 @@ def save_transactions(df: pd.DataFrame) -> bool:
     try:
         cursor = conn.cursor()
         query = """
-            INSERT INTO transactions (start_date, description, normalized_description, amount, currency, category_id, type) 
-            VALUES (%s, %s, %s, %s, %s, %s, %s)
+            INSERT INTO transactions (start_date, description, amount, currency, category_id, type) 
+            VALUES (%s, %s, %s, %s, %s, %s)
             ON DUPLICATE KEY UPDATE 
-            normalized_description = VALUES(normalized_description),
             amount = VALUES(amount), 
             currency = VALUES(currency), 
             category_id = VALUES(category_id),
@@ -154,7 +159,6 @@ def save_transactions(df: pd.DataFrame) -> bool:
             data.append((
                 row['start_date'].to_pydatetime() if pd.notna(row['start_date']) else None,
                 str(row['description']),
-                str(row['normalized_description']) if 'normalized_description' in row else None,
                 float(row['amount']),
                 str(row['currency']),
                 int(row['category_id']) if 'category_id' in row else None,
@@ -183,7 +187,6 @@ def get_transactions() -> pd.DataFrame:
             SELECT 
                 t.start_date as date, 
                 t.description, 
-                t.normalized_description,
                 t.amount, 
                 t.currency, 
                 c.category,
@@ -203,3 +206,22 @@ def get_transactions() -> pd.DataFrame:
         if conn:
             conn.close()
         return pd.DataFrame()
+
+def get_categories() -> List[Dict]:
+    """Retrieves all available categories from the database."""
+    conn = get_db_connection()
+    if not conn:
+        return []
+    
+    try:
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT * FROM dim_categories ORDER BY category ASC")
+        categories = cursor.fetchall()
+        cursor.close()
+        conn.close()
+        return categories
+    except Exception as err:
+        print(f"Error retrieving categories: {err}")
+        if conn:
+            conn.close()
+        return []

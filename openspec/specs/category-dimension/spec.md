@@ -22,6 +22,20 @@ The `transactions` table SHALL reference `dim_categories` via a `category_id` fo
 - **WHEN** the API returns transaction data
 - **THEN** each transaction SHALL include the full category breakdown: `flow_type`, `flow_sub_type`, `category`, and `is_recurrent` from the joined `dim_categories` table
 
+### Requirement: Category API
+The system SHALL provide an API endpoint to retrieve all categories for filtering purposes.
+
+#### Scenario: Listing categories
+- **WHEN** `GET /api/categories` is called
+- **THEN** it SHALL return a list of all category objects from `dim_categories` including `id` and `category_name`
+
+### Requirement: Multi-Category Filtering
+The system SHALL support filtering transactions by multiple categories simultaneously.
+
+#### Scenario: Filtering by multiple categories
+- **WHEN** `GET /api/transactions` is called with the `categories` query parameter (e.g., `?categories=1,2,5`)
+- **THEN** it SHALL return only transactions that belong to any of the specified category IDs
+
 ### Requirement: Currency Transfer Category
 The system SHALL define a dedicated category with `flow_type: transfer` for internal currency account transfers.
 

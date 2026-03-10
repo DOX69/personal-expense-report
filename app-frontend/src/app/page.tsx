@@ -9,6 +9,8 @@ import CashflowChart from '@/components/dashboard/CashflowChart';
 import CategoriesChart from '@/components/dashboard/CategoriesChart';
 import RecentTransactions from '@/components/dashboard/RecentTransactions';
 import CashflowSankey from '@/components/dashboard/SankeyChart';
+import { formatCurrency } from '@/utils/format';
+import { ChevronDown, X } from 'lucide-react';
 
 interface DashboardMetrics {
   total_income: number;
@@ -18,10 +20,22 @@ interface DashboardMetrics {
 
 export default function Dashboard() {
   const [period, setPeriod] = useState('this_month');
-  const [category, setCategory] = useState('all');
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [isCategoryOpen, setIsCategoryOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [flowType, setFlowType] = useState('all');
   const [customMonth, setCustomMonth] = useState<{ month: number; year: number } | null>(null);
+
+  // Fetch dynamic categories
+  const { data: categories = [] } = useQuery<any[]>({
+    queryKey: ['categories'],
+    queryFn: async () => {
+      const { data } = await axios.get('http://localhost:8000/api/categories');
+      return data;
+    }
+  });
+
+  const categoryQuery = selectedCategories.length > 0 ? selectedCategories.join(',') : 'all';
 
   // Convert period to start_date and end_date
   let startDate = '';
@@ -44,7 +58,7 @@ export default function Dashboard() {
 
   const handleReset = () => {
     setPeriod('all');
-    setCategory('all');
+    setSelectedCategories([]);
     setFlowType('all');
     setSearchQuery('');
     setCustomMonth(null);
@@ -122,44 +136,60 @@ export default function Dashboard() {
             </select>
           </div>
 
-          <div className="flex flex-col space-y-1">
-            <label htmlFor="category-select" className="text-xs text-gray-400 font-medium uppercase tracking-wider">Category</label>
-            <select
-              id="category-select"
-              aria-label="Category"
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              className="bg-[#2a2a2a] border border-[#444] text-white text-sm rounded-lg focus:ring-[#4ade80] focus:border-[#4ade80] block w-full p-2.5 outline-none"
+          <div className="flex flex-col space-y-1 relative min-w-[200px]">
+            <label className="text-xs text-gray-400 font-medium uppercase tracking-wider">Category</label>
+            <div 
+              className="bg-[#2a2a2a] border border-[#444] text-white text-sm rounded-lg p-2.5 cursor-pointer flex justify-between items-center"
+              onClick={() => setIsCategoryOpen(!isCategoryOpen)}
             >
-              <option value="all">All Categories</option>
-              <optgroup label="Income" className="bg-[#1e1e1e] text-green-400">
-                <option value="Salary">Salary</option>
-                <option value="Dividends">Dividends</option>
-                <option value="Interest">Interest</option>
-                <option value="Rent">Rent</option>
-                <option value="Refund">Refund</option>
-                <option value="Gift">Gift</option>
-                <option value="Other Income">Other Income</option>
-              </optgroup>
-              <optgroup label="Expense" className="bg-[#1e1e1e] text-red-400">
-                <option value="Housing">Housing</option>
-                <option value="Energy & Water">Energy & Water</option>
-                <option value="Insurance">Insurance</option>
-                <option value="Telecom">Telecom</option>
-                <option value="Groceries">Groceries</option>
-                <option value="Transport">Transport</option>
-                <option value="Dining Out">Dining Out</option>
-                <option value="Shopping">Shopping</option>
-                <option value="Leisure & Culture">Leisure & Culture</option>
-                <option value="Health">Health</option>
-                <option value="Other">Other</option>
-              </optgroup>
-              <optgroup label="Other" className="bg-[#1e1e1e] text-gray-400">
-                <option value="Savings">Savings</option>
-                <option value="Investment">Investment</option>
-                <option value="Currency Transfer">Currency Transfer</option>
-              </optgroup>
-            </select>
+              <span className="truncate">
+                {selectedCategories.length === 0 ? 'All Categories' : 
+                 selectedCategories.length === 1 ? selectedCategories[0] : 
+                 `${selectedCategories.length} selected`}
+              </span>
+              <ChevronDown className={`w-4 h-4 transition-transform ${isCategoryOpen ? 'rotate-180' : ''}`} />
+            </div>
+
+            {isCategoryOpen && (
+              <div className="absolute top-full left-0 right-0 mt-2 bg-[#1e1e1e] border border-[#333] rounded-lg shadow-xl z-50 max-h-64 overflow-y-auto p-2">
+                <div 
+                  className="flex items-center p-2 hover:bg-[#2a2a2a] rounded cursor-pointer"
+                  onClick={() => setSelectedCategories([])}
+                >
+                  <div className={`w-4 h-4 rounded border ${selectedCategories.length === 0 ? 'bg-[#4ade80] border-[#4ade80]' : 'border-[#444]'} mr-2`} />
+                  All Categories
+                </div>
+                {['income', 'expense', 'transfer'].map(type => (
+                  <div key={type}>
+                    <div className="text-[10px] text-gray-500 uppercase font-bold px-2 mt-2 mb-1">{type}</div>
+                    {categories.filter(c => c.flow_type === type).map(cat => (
+                      <div 
+                        key={cat.category}
+                        className="flex items-center p-2 hover:bg-[#2a2a2a] rounded cursor-pointer"
+                        onClick={() => {
+                          if (selectedCategories.includes(cat.category)) {
+                            setSelectedCategories(selectedCategories.filter(c => c !== cat.category));
+                          } else {
+                            setSelectedCategories([...selectedCategories, cat.category]);
+                          }
+                        }}
+                      >
+                        <div className={`w-4 h-4 rounded border ${selectedCategories.includes(cat.category) ? 'bg-[#4ade80] border-[#4ade80]' : 'border-[#444]'} mr-2`} />
+                        {cat.category}
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            )}
+            {selectedCategories.length > 0 && (
+              <button 
+                onClick={(e) => { e.stopPropagation(); setSelectedCategories([]); }}
+                className="absolute right-8 top-[34px] text-gray-400 hover:text-white"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            )}
           </div>
 
           <div className="flex flex-col space-y-1 flex-1 min-w-[200px]">
@@ -190,21 +220,21 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <MetricCard
           title="Total Balance"
-          value={`$${(metrics?.net_cashflow || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+          value={formatCurrency(metrics?.net_cashflow || 0)}
           icon={Wallet}
           trend="+12.5%"
           trendPositive={true}
         />
         <MetricCard
           title={getPeriodLabel('Income')}
-          value={`$${(metrics?.total_income || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+          value={formatCurrency(metrics?.total_income || 0)}
           icon={TrendingUp}
           trend="+8.2%"
           trendPositive={true}
         />
         <MetricCard
           title={getPeriodLabel('Expenses')}
-          value={`$${Math.abs(metrics?.total_expense || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+          value={formatCurrency(Math.abs(metrics?.total_expense || 0))}
           icon={TrendingDown}
           trend="-5.1%"
           trendPositive={false}
@@ -227,7 +257,7 @@ export default function Dashboard() {
           <CashflowChart
             startDate={startDate}
             endDate={endDate}
-            category={category}
+            category={categoryQuery}
             onMonthSelect={(month, year) => setCustomMonth({ month, year })}
           />
         </div>
@@ -235,7 +265,7 @@ export default function Dashboard() {
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-gray-400 font-medium">Spending Categories</h3>
           </div>
-          <CategoriesChart startDate={startDate} endDate={endDate} category={category} onCategorySelect={setCategory} />
+          <CategoriesChart startDate={startDate} endDate={endDate} category={categoryQuery} onCategorySelect={(cat) => setSelectedCategories([cat])} />
         </div>
       </div>
 
@@ -245,7 +275,7 @@ export default function Dashboard() {
         <RecentTransactions
           startDate={startDate}
           endDate={endDate}
-          category={category}
+          category={categoryQuery}
           flowType={flowType}
           search={searchQuery}
         />
