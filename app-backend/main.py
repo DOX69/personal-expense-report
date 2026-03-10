@@ -13,8 +13,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-from db import init_db, get_transactions, save_transactions
-from data_processor import parse_and_validate_csv
+try:
+    from .db import init_db, get_transactions, save_transactions
+    from .data_processor import parse_and_validate_csv
+except (ImportError, ValueError):
+    from db import init_db, get_transactions, save_transactions
+    from data_processor import parse_and_validate_csv
 from fastapi import UploadFile, File
 
 @app.on_event("startup")

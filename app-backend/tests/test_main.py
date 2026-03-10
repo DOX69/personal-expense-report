@@ -14,9 +14,14 @@ def _mock_transactions_df():
     return pd.DataFrame({
         'date': pd.to_datetime(['2026-01-15', '2026-01-20', '2026-02-01']),
         'description': ['Deliveroo', 'Salaire', 'SBB CFF FFS'],
+        'normalized_description': ['Deliveroo', 'Salaire', 'Sbb Cff Ffs'],
         'amount': [-45.08, 3500.00, -11.00],
         'currency': ['CHF', 'CHF', 'CHF'],
-        'category': ['Food & Dining', 'Transfer', 'Transport'],
+        'category': ['Food & Dining', 'Salary', 'Transport'],
+        'flow_type': ['expense', 'income', 'expense'],
+        'flow_sub_type': ['variable', 'active', 'variable'],
+        'is_recurrent': [False, True, False],
+        'type': ['Card', 'Transfer', 'Card']
     })
 
 def test_read_main():

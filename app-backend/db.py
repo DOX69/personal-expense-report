@@ -18,7 +18,10 @@ def get_db_connection():
         print(f"Error connecting to database: {err}")
         return None
 
-from data_processor import CATEGORY_SEED_DATA, categorize_transaction, normalize_description
+try:
+    from .data_processor import CATEGORY_SEED_DATA, categorize_transaction, normalize_description
+except (ImportError, ValueError):
+    from data_processor import CATEGORY_SEED_DATA, categorize_transaction, normalize_description
 
 def migrate_existing_transactions(conn):
     """Re-categorizes all existing transactions after schema upgrade."""

@@ -12,7 +12,7 @@ def test_parse_valid_csv():
     assert len(df) == 1
     assert len(errors) == 0
     assert df.iloc[0]['amount'] == -50.00
-    assert df.iloc[0]['category'] == 'Dépenses Variables - Vie Sociale'
+    assert df.iloc[0]['category_id'] == 21  # dining_out
 
 def test_parse_missing_columns():
     csv_content = StringIO("Description,Montant,Devise\nDeliveroo,-50.00,EUR")

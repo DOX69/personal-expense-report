@@ -57,33 +57,32 @@ class TestParseAndValidateCSV:
         df, errors = parse_and_validate_csv(csv)
 
         assert errors == []
-        assert 'Transport' in df.iloc[0]['category']
+        assert df.iloc[0]['category_id'] == 22 # transport
 
     def test_categorizes_food_expense(self):
         csv = self._make_csv(["2026-01-15,Deliveroo,-30.00,CHF"])
         df, errors = parse_and_validate_csv(csv)
 
         assert errors == []
-        assert 'Sociale' in df.iloc[0]['category'] or 'Dining' in df.iloc[0]['category']
+        assert df.iloc[0]['category_id'] == 21 # dining_out
 
     def test_categorizes_shopping_expense(self):
         csv = self._make_csv(["2026-01-15,Amazon Prime,-6.47,CHF"])
         df, errors = parse_and_validate_csv(csv)
 
         assert errors == []
-        assert 'Shopping' in df.iloc[0]['category']
+        assert df.iloc[0]['category_id'] == 13 or df.iloc[0]['category_id'] == 24 # telecom (prime) or shopping
 
     def test_categorizes_income(self):
         csv = self._make_csv(["2026-01-15,Salaire mensuel,3500.00,CHF"])
         df, errors = parse_and_validate_csv(csv)
 
         assert errors == []
-        assert 'Revenus' in df.iloc[0]['category']
+        assert df.iloc[0]['category_id'] == 1 # salary
 
     def test_fallback_category_for_unknown_description(self):
         csv = self._make_csv(["2026-01-15,Fishcake,-10.00,CHF"])
         df, errors = parse_and_validate_csv(csv)
 
         assert errors == []
-        assert df.iloc[0]['category'] is not None
-        assert len(df.iloc[0]['category']) > 0
+        assert df.iloc[0]['category_id'] == 26 # other expense

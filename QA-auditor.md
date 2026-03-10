@@ -114,3 +114,34 @@ Always follow this high‑level loop:
 - Section 5: Next best actions for the team
 
 Follow this specification unless I explicitly override parts of it.
+
+---
+## QA Audit: Database Documentation and Cleanup Sync
+
+### Section 1: What I analyzed
+- **Database Schema**: Verified `dim_categories` structure and data directly from MySQL.
+- **Documentation**: Audited the `README.md` updates for accuracy against the live database.
+- **Environment**: Verified Docker container states and checked for extraneous log/txt files.
+- **Workflow**: Reviewed the new `general-fixes.md` for adherence to team standards.
+- **System Stability**: Performed local browser testing on the side branch.
+
+### Section 2: Tests I ran (or propose), with status
+- [x] **MySQL Inspection**: `DESCRIBE` and `SELECT` query results match `README.md`. (PASS)
+- [x] **Docker Health**: `docker compose ps` shows all services running. (PASS)
+- [x] **Browser Verification**: `http://localhost:3000` loads correctly and dashboard is functional. (PASS)
+- [x] **Frontend Tests**: `npm test` inside `app-frontend` (PASS)
+- [ ] **Backend Tests**: `pytest tests/` (FAIL: Regression in `test_data_processor.py`)
+- [x] **Artifact Cleanup**: Root directory is clear of `*.log` and `*.txt` test artifacts. (PASS)
+
+### Section 3: Issues found and their severity
+- **Issue**: Backend test regression in `test_data_processor.py` (Severity: HIGH).
+  - *Description*: `test_parse_valid_csv_success` is failing with an AssertionError.
+  - *Impact*: Prevents clean merge and compromises CI integrity.
+
+### Section 4: Current release recommendation
+**DO NOT RELEASE** until the backend test regression is fixed.
+
+### Section 5: Next best actions for the team
+1. Investigate and fix the failing test in `tests/test_data_processor.py`.
+2. Re-run full test suite after the fix.
+3. Proceed with PR and CI validation once green.
