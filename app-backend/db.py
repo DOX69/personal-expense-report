@@ -70,20 +70,23 @@ def init_db():
                     )
                 """)
                 
-                # 2. Seed dim_categories if empty
-                cursor.execute("SELECT COUNT(*) FROM dim_categories")
-                if cursor.fetchone()[0] == 0:
-                    seed_query = """
-                        INSERT INTO dim_categories (id, flow_type, flow_sub_type, category, is_recurrent)
-                        VALUES (%s, %s, %s, %s, %s)
-                    """
-                    seed_data = [
-                        (c['id'], c['flow_type'], c['flow_sub_type'], c['category'], c['is_recurrent'])
-                        for c in CATEGORY_SEED_DATA
-                    ]
-                    cursor.executemany(seed_query, seed_data)
+                # 2. Seed/Update dim_categories
+                seed_query = """
+                    INSERT INTO dim_categories (id, flow_type, flow_sub_type, category, is_recurrent)
+                    VALUES (%s, %s, %s, %s, %s)
+                    ON DUPLICATE KEY UPDATE 
+                        flow_type = VALUES(flow_type),
+                        flow_sub_type = VALUES(flow_sub_type),
+                        category = VALUES(category),
+                        is_recurrent = VALUES(is_recurrent)
+                """
+                seed_data = [
+                    (c['id'], c['flow_type'], c['flow_sub_type'], c['category'], c['is_recurrent'])
+                    for c in CATEGORY_SEED_DATA
+                ]
+                cursor.executemany(seed_query, seed_data)
                 
-                # 3. Create transactions table with new columns
+                # 3. Create transactions table (removed old 'category' column)
                 cursor.execute("""
                     CREATE TABLE IF NOT EXISTS transactions (
                         id INT AUTO_INCREMENT PRIMARY KEY,
@@ -92,7 +95,6 @@ def init_db():
                         normalized_description VARCHAR(500),
                         amount FLOAT NOT NULL,
                         currency VARCHAR(10) NOT NULL,
-                        category VARCHAR(255),
                         category_id INT,
                         type VARCHAR(255),
                         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -112,6 +114,11 @@ def init_db():
                 cursor.execute("SHOW COLUMNS FROM transactions LIKE 'normalized_description'")
                 if not cursor.fetchone():
                     cursor.execute("ALTER TABLE transactions ADD COLUMN normalized_description VARCHAR(500)")
+
+                # Remove legacy 'category' column if it exists
+                cursor.execute("SHOW COLUMNS FROM transactions LIKE 'category'")
+                if cursor.fetchone():
+                    cursor.execute("ALTER TABLE transactions DROP COLUMN category")
 
                 conn.commit()
                 
@@ -203,3 +210,22 @@ def get_transactions() -> pd.DataFrame:
         if conn:
             conn.close()
         return pd.DataFrame()
+
+def get_categories() -> List[Dict]:
+    """Retrieves all available categories from the database."""
+    conn = get_db_connection()
+    if not conn:
+        return []
+    
+    try:
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT * FROM dim_categories ORDER BY category ASC")
+        categories = cursor.fetchall()
+        cursor.close()
+        conn.close()
+        return categories
+    except Exception as err:
+        print(f"Error retrieving categories: {err}")
+        if conn:
+            conn.close()
+        return []

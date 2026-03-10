@@ -35,12 +35,12 @@ class TestCategorySeedData:
     def test_seed_data_has_currency_transfer(self):
         transfer_rows = [r for r in CATEGORY_SEED_DATA if r['flow_type'] == 'transfer']
         assert len(transfer_rows) >= 1
-        currency_transfer = [r for r in transfer_rows if r['category'] == 'currency_transfer']
+        currency_transfer = [r for r in transfer_rows if r['category'] == 'Currency Transfer']
         assert len(currency_transfer) == 1
 
     def test_seed_data_has_salary(self):
         salary_rows = [r for r in CATEGORY_SEED_DATA
-                       if r['flow_type'] == 'income' and r['category'] == 'salary']
+                       if r['flow_type'] == 'income' and r['category'] == 'Salary']
         assert len(salary_rows) == 1
         salary = salary_rows[0]
         assert salary['flow_sub_type'] == 'active'
@@ -72,74 +72,74 @@ class TestCategorizeTransaction:
     def test_salary_decideom(self):
         row = {'description': 'DECIDEOM SAS Virement', 'amount': 2500.0}
         result = categorize_transaction(row)
-        salary = next(r for r in CATEGORY_SEED_DATA if r['category'] == 'salary')
+        salary = next(r for r in CATEGORY_SEED_DATA if r['category'] == 'Salary')
         assert result == salary['id']
 
     def test_salary_mondial_relay(self):
         row = {'description': 'MONDIAL RELAY paiement', 'amount': 1800.0}
         result = categorize_transaction(row)
-        salary = next(r for r in CATEGORY_SEED_DATA if r['category'] == 'salary')
+        salary = next(r for r in CATEGORY_SEED_DATA if r['category'] == 'Salary')
         assert result == salary['id']
 
     def test_currency_transfer_change_en_chf(self):
         row = {'description': 'Change en CHF', 'amount': 1200.0}
         result = categorize_transaction(row)
-        ct = next(r for r in CATEGORY_SEED_DATA if r['category'] == 'currency_transfer')
+        ct = next(r for r in CATEGORY_SEED_DATA if r['category'] == 'Currency Transfer')
         assert result == ct['id']
 
     def test_currency_transfer_change_en_eur(self):
         row = {'description': 'Change en EUR', 'amount': -150.16}
         result = categorize_transaction(row)
-        ct = next(r for r in CATEGORY_SEED_DATA if r['category'] == 'currency_transfer')
+        ct = next(r for r in CATEGORY_SEED_DATA if r['category'] == 'Currency Transfer')
         assert result == ct['id']
 
     def test_transport_sbb_cff(self):
         row = {'description': 'SBB CFF FFS', 'amount': -11.0}
         result = categorize_transaction(row)
         cat = next(r for r in CATEGORY_SEED_DATA if r['id'] == result)
-        assert cat['category'] == 'transport'
+        assert cat['category'] == 'Transport'
 
     def test_transport_sncf(self):
         row = {'description': 'SNCF voyage', 'amount': -204.5}
         result = categorize_transaction(row)
         cat = next(r for r in CATEGORY_SEED_DATA if r['id'] == result)
-        assert cat['category'] == 'transport'
+        assert cat['category'] == 'Transport'
 
     def test_food_delivery_deliveroo(self):
         row = {'description': 'Deliveroo', 'amount': -45.08}
         result = categorize_transaction(row)
         cat = next(r for r in CATEGORY_SEED_DATA if r['id'] == result)
-        assert cat['category'] == 'dining_out'
+        assert cat['category'] == 'Restaurant'
 
     def test_shopping_amazon(self):
         row = {'description': 'Amazon.fr', 'amount': -6.47}
         result = categorize_transaction(row)
         cat = next(r for r in CATEGORY_SEED_DATA if r['id'] == result)
-        assert cat['category'] == 'shopping'
+        assert cat['category'] == 'Shopping'
 
     def test_fuel_tamoil(self):
         row = {'description': 'Tamoil', 'amount': -22.20}
         result = categorize_transaction(row)
         cat = next(r for r in CATEGORY_SEED_DATA if r['id'] == result)
-        assert cat['category'] == 'transport'
+        assert cat['category'] == 'Transport'
 
     def test_groceries_auchan(self):
         row = {'description': 'Auchan supermarche', 'amount': -21.80}
         result = categorize_transaction(row)
         cat = next(r for r in CATEGORY_SEED_DATA if r['id'] == result)
-        assert cat['category'] == 'groceries'
+        assert cat['category'] == 'Groceries'
 
     def test_groceries_carrefour(self):
         row = {'description': 'Carrefour', 'amount': -22.99}
         result = categorize_transaction(row)
         cat = next(r for r in CATEGORY_SEED_DATA if r['id'] == result)
-        assert cat['category'] == 'groceries'
+        assert cat['category'] == 'Groceries'
 
     def test_unknown_description_returns_fallback(self):
         row = {'description': 'Random Unknown 123', 'amount': -10.0}
         result = categorize_transaction(row)
         cat = next(r for r in CATEGORY_SEED_DATA if r['id'] == result)
-        assert cat['category'] == 'other'
+        assert cat['category'] == 'Other Expense'
         assert cat['flow_type'] == 'expense'
 
     def test_deterministic_same_input_same_output(self):
