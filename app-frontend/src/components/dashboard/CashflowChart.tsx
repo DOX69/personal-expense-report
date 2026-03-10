@@ -80,6 +80,7 @@ export default function CashflowChart({ startDate, endDate, category, onMonthSel
                         contentStyle={{ backgroundColor: '#1e1e1e', borderColor: '#333', color: '#fff', borderRadius: '8px' }}
                         itemStyle={{ color: '#fff' }}
                         cursor={{ fill: '#2a2a2a' }}
+                        formatter={(value: any) => [`$${Number(value).toFixed(2)}`, 'Value']}
                     />
                     <Legend wrapperStyle={{ fontSize: '12px', color: '#9ca3af', paddingTop: '10px' }} />
                     <Bar

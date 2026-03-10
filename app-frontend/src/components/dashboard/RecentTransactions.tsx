@@ -11,7 +11,6 @@ interface Transaction {
     id: number;
     date: string;
     description: string;
-    normalized_description: string;
     amount: number;
     currency: string;
     category: string;
@@ -88,15 +87,8 @@ export default function RecentTransactions({ startDate, endDate, category, flowT
                                         {t.date ? format(parseISO(t.date), 'MMM dd, yyyy') : 'N/A'}
                                     </td>
                                     <td className="py-3 px-6 text-sm font-medium text-gray-200">
-                                        <div className="flex flex-col">
-                                            <div className="max-w-[200px] truncate" title={t.description}>
-                                                {t.normalized_description || t.description}
-                                            </div>
-                                            {t.normalized_description && (
-                                                <div className="text-[10px] text-gray-500 truncate max-w-[200px]">
-                                                    {t.description}
-                                                </div>
-                                            )}
+                                        <div className="max-w-[200px] truncate" title={t.description}>
+                                            {t.description}
                                         </div>
                                     </td>
                                     <td className="py-3 px-6 text-xs text-center">

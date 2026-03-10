@@ -8,7 +8,6 @@ from data_processor import (
     CATEGORY_SEED_DATA,
     build_keyword_to_category_id_map,
     categorize_transaction,
-    normalize_description,
     parse_and_validate_csv,
 )
 
@@ -155,24 +154,6 @@ class TestCategorizeTransaction:
         assert cat['flow_type'] == 'income'
 
 
-class TestNormalizeDescription:
-    """Verify description cleanup."""
-
-    def test_strips_transaction_references(self):
-        result = normalize_description('SBB CFF FFS 12345')
-        assert '12345' not in result
-
-    def test_applies_title_case(self):
-        result = normalize_description('deliveroo')
-        assert result[0].isupper()
-
-    def test_preserves_meaningful_words(self):
-        result = normalize_description('SBB CFF FFS')
-        assert 'Sbb' in result or 'SBB' in result
-
-    def test_empty_string_returns_empty(self):
-        result = normalize_description('')
-        assert result == ''
 
 
 class TestParseAndValidateCSVWithCategoryId:
@@ -191,13 +172,6 @@ class TestParseAndValidateCSVWithCategoryId:
         # Use a more broad check as pandas might return numpy int64
         assert str(df.iloc[0]['category_id']).isdigit()
 
-    def test_returns_normalized_description_column(self):
-        csv = self._make_csv(["2026-01-15,Deliveroo,-45.08,CHF"])
-        df, errors = parse_and_validate_csv(csv)
-
-        assert errors == []
-        assert 'normalized_description' in df.columns
-        assert len(df.iloc[0]['normalized_description']) > 0
 
     def test_category_column_no_longer_exists(self):
         csv = self._make_csv(["2026-01-15,Deliveroo,-45.08,CHF"])

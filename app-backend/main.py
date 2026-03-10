@@ -61,10 +61,9 @@ def read_transactions(start_date: str = None, end_date: str = None, category: st
         
         if search:
             search_term = search.lower()
-            # Search in original description, normalized description, and category
+            # Search in original description and category
             mask = (
                 df['description'].str.lower().str.contains(search_term, na=False) | 
-                df['normalized_description'].str.lower().str.contains(search_term, na=False) |
                 df['category'].str.lower().str.contains(search_term, na=False)
             )
             df = df[mask]

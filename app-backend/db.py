@@ -19,28 +19,27 @@ def get_db_connection():
         return None
 
 try:
-    from .data_processor import CATEGORY_SEED_DATA, categorize_transaction, normalize_description
+    from .data_processor import CATEGORY_SEED_DATA, categorize_transaction
 except (ImportError, ValueError):
-    from data_processor import CATEGORY_SEED_DATA, categorize_transaction, normalize_description
+    from data_processor import CATEGORY_SEED_DATA, categorize_transaction
 
 def migrate_existing_transactions(conn):
     """Re-categorizes all existing transactions after schema upgrade."""
     try:
         cursor = conn.cursor(dictionary=True)
         # Select rows that need re-categorization
-        cursor.execute("SELECT id, description, amount FROM transactions WHERE category_id IS NULL OR normalized_description IS NULL")
+        cursor.execute("SELECT id, description, amount FROM transactions WHERE category_id IS NULL")
         rows = cursor.fetchall()
         
         if not rows:
             return
             
         print(f"Migrating {len(rows)} transactions...")
-        update_query = "UPDATE transactions SET category_id = %s, normalized_description = %s WHERE id = %s"
+        update_query = "UPDATE transactions SET category_id = %s WHERE id = %s"
         update_data = []
         for row in rows:
             cat_id = categorize_transaction(row)
-            norm_desc = normalize_description(row['description'])
-            update_data.append((cat_id, norm_desc, row['id']))
+            update_data.append((cat_id, row['id']))
             
         cursor.executemany(update_query, update_data)
         conn.commit()
@@ -92,7 +91,6 @@ def init_db():
                         id INT AUTO_INCREMENT PRIMARY KEY,
                         start_date DATETIME NOT NULL,
                         description VARCHAR(500) NOT NULL,
-                        normalized_description VARCHAR(500),
                         amount FLOAT NOT NULL,
                         currency VARCHAR(10) NOT NULL,
                         category_id INT,
@@ -111,9 +109,10 @@ def init_db():
                         cursor.execute("ALTER TABLE transactions ADD CONSTRAINT fk_category FOREIGN KEY (category_id) REFERENCES dim_categories(id)")
                     except: pass # Might already exist if previous run partially failed
 
+                # Remove legacy 'normalized_description' column if it exists
                 cursor.execute("SHOW COLUMNS FROM transactions LIKE 'normalized_description'")
-                if not cursor.fetchone():
-                    cursor.execute("ALTER TABLE transactions ADD COLUMN normalized_description VARCHAR(500)")
+                if cursor.fetchone():
+                    cursor.execute("ALTER TABLE transactions DROP COLUMN normalized_description")
 
                 # Remove legacy 'category' column if it exists
                 cursor.execute("SHOW COLUMNS FROM transactions LIKE 'category'")
@@ -145,10 +144,9 @@ def save_transactions(df: pd.DataFrame) -> bool:
     try:
         cursor = conn.cursor()
         query = """
-            INSERT INTO transactions (start_date, description, normalized_description, amount, currency, category_id, type) 
-            VALUES (%s, %s, %s, %s, %s, %s, %s)
+            INSERT INTO transactions (start_date, description, amount, currency, category_id, type) 
+            VALUES (%s, %s, %s, %s, %s, %s)
             ON DUPLICATE KEY UPDATE 
-            normalized_description = VALUES(normalized_description),
             amount = VALUES(amount), 
             currency = VALUES(currency), 
             category_id = VALUES(category_id),
@@ -161,7 +159,6 @@ def save_transactions(df: pd.DataFrame) -> bool:
             data.append((
                 row['start_date'].to_pydatetime() if pd.notna(row['start_date']) else None,
                 str(row['description']),
-                str(row['normalized_description']) if 'normalized_description' in row else None,
                 float(row['amount']),
                 str(row['currency']),
                 int(row['category_id']) if 'category_id' in row else None,
@@ -190,7 +187,6 @@ def get_transactions() -> pd.DataFrame:
             SELECT 
                 t.start_date as date, 
                 t.description, 
-                t.normalized_description,
                 t.amount, 
                 t.currency, 
                 c.category,

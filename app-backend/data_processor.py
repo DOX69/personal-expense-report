@@ -73,18 +73,6 @@ def build_keyword_to_category_id_map() -> Dict[str, int]:
 
 KEYWORD_MAP = build_keyword_to_category_id_map()
 
-def normalize_description(desc: str) -> str:
-    """Cleans up banking descriptions for display."""
-    if not desc:
-        return ""
-    
-    # Remove common transaction numbers / dates often embedded in descriptions
-    # e.g., "SBB CFF FFS 12345678" -> "SBB CFF FFS"
-    cleaned = re.sub(r'\d{5,}', '', desc) # Remove 5+ consecutive digits
-    cleaned = cleaned.strip()
-    
-    # Title Case
-    return cleaned.title()
 
 def categorize_transaction(row) -> int:
     """Categorizes a transaction based on its description and amount. Returns dim_categories.id."""
@@ -161,7 +149,6 @@ def parse_and_validate_csv(file_content, user_id: Optional[int] = None) -> Tuple
 
         # 4. New Categorization logic
         df['category_id'] = df.apply(categorize_transaction, axis=1)
-        df['normalized_description'] = df['description'].apply(normalize_description)
             
         return df, errors
 

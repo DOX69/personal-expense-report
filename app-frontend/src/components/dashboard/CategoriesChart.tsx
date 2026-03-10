@@ -79,8 +79,14 @@ export default function CategoriesChart({ startDate, endDate, category, onCatego
                         ))}
                     </Pie>
                     <Tooltip
-                        contentStyle={{ backgroundColor: '#1e1e1e', borderColor: '#333', color: '#fff', borderRadius: '8px' }}
-                        formatter={(value: any) => `$${Number(value).toFixed(2)}`}
+                        contentStyle={{ 
+                            backgroundColor: '#1e1e1e', 
+                            borderColor: '#333', 
+                            borderRadius: '8px',
+                            color: '#fff'
+                        }}
+                        itemStyle={{ color: '#fff' }}
+                        formatter={(value: any) => [`$${Number(value).toFixed(2)}`, 'Amount']}
                     />
                     <Legend wrapperStyle={{ fontSize: '12px', color: '#9ca3af' }} />
                 </PieChart>
