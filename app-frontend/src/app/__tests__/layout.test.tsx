@@ -24,12 +24,6 @@ jest.mock('@/components/layout/Header', () => ({
 describe('RootLayout', () => {
     it('suppresses hydration warnings on the html tag', () => {
         // We render the layout and then inspect the raw HTML output or the DOM string
-        const { container } = render(
-            <RootLayout>
-                <div>Test Content</div>
-            </RootLayout>
-        );
-
         // RTL renders the children of RootLayout into a div, but RootLayout returns <html>...
         // Let's check the container's innerHTML to see if the suppressHydrationWarning prop (or its React internal representation) is handled, 
         // or just check if the html tag has no hydration mismatch.

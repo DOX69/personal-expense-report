@@ -1,0 +1,12 @@
+{
+  "name": "personal-expense-report",
+  "version": "1.0.0",
+  "description": "Personal Expense Report with Supabase and Next.js",
+  "scripts": {
+    "test": "npm test --prefix app-frontend -- --watchAll=false",
+    "dev": "npm run dev --prefix app-frontend"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
