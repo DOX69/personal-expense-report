@@ -2,7 +2,7 @@
 
 import { Sankey, Tooltip, ResponsiveContainer, Rectangle, Layer } from 'recharts';
 import { useQuery } from '@tanstack/react-query';
-import apiClient from '@/utils/apiClient';
+import { apiClient } from '@/lib/apiClient';
 
 interface SankeyData {
     nodes: { name: string }[];
@@ -50,11 +50,10 @@ export default function CashflowSankey({ startDate, endDate }: CashflowSankeyPro
     const { data: sankeyData, isLoading, error } = useQuery<SankeyData>({
         queryKey: ['sankey', startDate, endDate],
         queryFn: async () => {
-            const params = new URLSearchParams();
-            if (startDate) params.append('start_date', startDate);
-            if (endDate) params.append('end_date', endDate);
-
-            const { data } = await apiClient.get(`/api/dashboard/sankey?${params.toString()}`);
+            const data = await apiClient.get('/dashboard/sankey', {
+                start_date: startDate,
+                end_date: endDate
+            });
             return data;
         }
     });

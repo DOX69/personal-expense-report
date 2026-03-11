@@ -2,7 +2,7 @@
 
 import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis, Legend, CartesianGrid } from 'recharts';
 import { useQuery } from '@tanstack/react-query';
-import apiClient from '@/utils/apiClient';
+import { apiClient } from '@/lib/apiClient';
 import { format, parseISO } from 'date-fns';
 import { useMemo } from 'react';
 
@@ -23,12 +23,11 @@ export default function CashflowChart({ startDate, endDate, category, onMonthSel
     const { data: transactions, isLoading } = useQuery<Transaction[]>({
         queryKey: ['transactions', startDate, endDate, category],
         queryFn: async () => {
-            const params = new URLSearchParams();
-            if (startDate) params.append('start_date', startDate);
-            if (endDate) params.append('end_date', endDate);
-            if (category && category !== 'all') params.append('category', category);
-
-            const { data } = await apiClient.get(`/api/transactions?${params.toString()}`);
+            const data = await apiClient.get('/transactions', {
+                start_date: startDate,
+                end_date: endDate,
+                category: category !== 'all' ? category : undefined
+            });
             return data;
         }
     });

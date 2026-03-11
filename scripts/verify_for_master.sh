@@ -2,26 +2,32 @@
 # Script to verify project state before pushing or merging to master
 set -e
 
-echo "--- 1. Running Backend Unit Tests ---"
-# We use the existing backend tests
-export PYTHONPATH=$PYTHONPATH:$(pwd)/app-backend
-python -m pytest app-backend/tests/
-
-echo "--- 2. Running Frontend Tests ---"
-if [ -d "app-frontend" ]; then
-    cd app-frontend
-    CI=true npm test -- --watchAll=false
-    cd ..
+# Load environment variables if .env.local exists (for local runs)
+if [ -f "app-frontend/.env.local" ]; then
+    echo "--- 0. Loading Environment Variables ---"
+    # This is a simple way to load variables for the script
+    # Caution: doesn't handle spaces or special characters well
+    export $(grep -v '^#' app-frontend/.env.local | xargs)
 fi
 
-echo "--- 3. Verifying Railway Connection ---"
-# This requires the user to be logged into Railway or have RAILWAY_TOKEN set
-if command -v railway &> /dev/null; then
-    echo "Using Railway CLI to run connection test..."
-    railway run python -m pytest tests/test_railway_connection.py
+echo "--- 1. Running Frontend Core Tests ---"
+if [ -d "app-frontend" ]; then
+    cd app-frontend
+    # Run tests in CI mode (non-interactive)
+    CI=true npm test -- --watchAll=false
+    cd ..
 else
-    echo "Railway CLI not found. Skipping live connection test."
-    echo "Please ensure you have verified the connection manually using: railway run pytest tests/test_railway_connection.py"
+    echo "ERROR: app-frontend directory not found!"
+    exit 1
+fi
+
+echo "--- 2. Verifying Supabase Configuration ---"
+# Check if Supabase variables are set
+if [ -z "$NEXT_PUBLIC_SUPABASE_URL" ] || [ -z "$SUPABASE_SERVICE_ROLE_KEY" ]; then
+    echo "WARNING: Supabase environment variables are missing."
+    echo "Please ensure NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are set."
+else
+    echo "Supabase configuration variables are present."
 fi
 
 echo ""

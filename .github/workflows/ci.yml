@@ -7,48 +7,6 @@ on:
     branches: [ "master" ]
 
 jobs:
-  backend:
-    runs-on: ubuntu-latest
-    services:
-      mysql:
-        image: mysql:8.0
-        env:
-          MYSQL_DATABASE: ${{ vars.DB_NAME }}
-          MYSQL_USER: ${{ vars.DB_USER }}
-          MYSQL_PASSWORD: ${{ secrets.DB_PASSWORD }}
-          MYSQL_ROOT_PASSWORD: ${{ secrets.DB_ROOT_PASSWORD }}
-        ports:
-          - 3306:3306
-        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-
-      - name: Run backend tests
-        env:
-          DB_HOST: 127.0.0.1
-          DB_PORT: 3306
-          DB_USER: ${{ vars.DB_USER }}
-          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-          DB_NAME: ${{ vars.DB_NAME }}
-          API_SECRET_KEY: ${{ secrets.API_SECRET_KEY }}
-          GITHUB_ACTIONS: true
-        run: |
-          cp -r app-backend app
-          export PYTHONPATH=$PYTHONPATH:$(pwd)
-          sleep 10
-          pytest app/tests/
-
   frontend:
     runs-on: ubuntu-latest
     steps:
@@ -68,7 +26,8 @@ jobs:
       - name: Run frontend tests
         working-directory: app-frontend
         env:
-          NEXT_PUBLIC_API_URL: http://localhost:8000
-          NEXT_PUBLIC_API_SECRET_KEY: ${{ secrets.API_SECRET_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL || 'http://localhost:54321' }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY || 'fake-key' }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY || 'fake-key' }}
           APP_PASSWORD: ${{ secrets.APP_PASSWORD }}
-        run: npm test
+        run: npm test -- --watchAll=false
