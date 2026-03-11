@@ -30,5 +30,4 @@ jobs:
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'fake-key' }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY || 'fake-key' }}
           APP_PASSWORD: ${{ secrets.APP_PASSWORD }}
-          NEXT_PUBLIC_API_SECRET_KEY: ${{ secrets.API_SECRET_KEY }}
         run: npm test -- --watchAll=false
