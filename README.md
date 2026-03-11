@@ -137,8 +137,8 @@ The project utilizes a **Kimball Star Schema** to ensure high-performance analyt
 
 
 #### Component Breakdown
-- **Next.js Frontend**: A modern, responsive SPA using Tailwind CSS for styling and Lucide icons.
-- **FastAPI Backend**: A high-performance Python API handling business logic and data orchestration.
+- **Next.js Frontend**: A modern, responsive SPA using Tailwind CSS for styling and Lucide icons. All API interactions are handled via a centralized `apiClient.ts` for consistent security and performance.
+- **FastAPI Backend**: A high-performance Python API handling business logic and data orchestration. Protected by custom API Key middleware.
 - **Pandas Processor**: Handles complex CSV manipulations and deterministic keyword-based auto-categorization.
 - **MySQL Storage**: Robust relational database using a star schema for persistence and analytical flexibility.
 
@@ -167,7 +167,7 @@ The simplest way to run the project.
    cd personal-expense-report
    docker-compose up --build -d
    ```
-3. **Restard without data loss**:
+3. **Restart without data loss**:
    ```bash
    docker compose up -d --build --force-recreate backend frontend db
    ```
