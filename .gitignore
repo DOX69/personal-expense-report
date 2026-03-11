@@ -18,4 +18,5 @@ htmlcov/
 sample-data/
 
 # env files
-.env*
+.env
+.env.local
