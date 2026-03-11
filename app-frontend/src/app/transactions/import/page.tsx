@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import apiClient from '@/utils/apiClient';
+import { apiClient } from '@/lib/apiClient';
 import { Upload, AlertCircle, CheckCircle2, FileUp } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { useDropzone } from 'react-dropzone';
@@ -16,9 +16,7 @@ export default function ImportPage() {
         mutationFn: async (file: File) => {
             const formData = new FormData();
             formData.append('file', file);
-            const { data } = await apiClient.post('/api/upload', formData, {
-                headers: { 'Content-Type': 'multipart/form-data' }
-            });
+            const data = await apiClient.postForm('/upload', formData);
             return data;
         },
         onSuccess: (data) => {

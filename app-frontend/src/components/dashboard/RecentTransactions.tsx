@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import apiClient from '@/utils/apiClient';
+import { apiClient } from '@/lib/apiClient';
 import { FileUp } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import clsx from 'clsx';
@@ -30,14 +30,13 @@ export default function RecentTransactions({ startDate, endDate, category, flowT
     const { data: transactions, isLoading } = useQuery<Transaction[]>({
         queryKey: ['transactions', startDate, endDate, category, flowType, search],
         queryFn: async () => {
-            const params = new URLSearchParams();
-            if (startDate) params.append('start_date', startDate);
-            if (endDate) params.append('end_date', endDate);
-            if (category && category !== 'all') params.append('category', category);
-            if (flowType && flowType !== 'all') params.append('flow_type', flowType);
-            if (search) params.append('search', search);
-
-            const { data } = await apiClient.get(`/api/transactions?${params.toString()}`);
+            const data = await apiClient.get('/transactions', {
+                start_date: startDate,
+                end_date: endDate,
+                category: category !== 'all' ? category : undefined,
+                flow_type: flowType !== 'all' ? flowType : undefined,
+                search: search
+            });
             return data;
         }
     });

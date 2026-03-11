@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import apiClient from '@/utils/apiClient';
+import { apiClient } from '@/lib/apiClient';
 import { useState } from 'react';
 import { Wallet, TrendingUp, TrendingDown, Target, Search } from 'lucide-react';
 import MetricCard from '@/components/dashboard/MetricCard';
@@ -30,7 +30,7 @@ export default function Dashboard() {
   const { data: categories = [] } = useQuery<any[]>({
     queryKey: ['categories'],
     queryFn: async () => {
-      const { data } = await apiClient.get('/api/categories');
+      const data = await apiClient.get('/categories');
       return data;
     }
   });
@@ -72,11 +72,10 @@ export default function Dashboard() {
   const { data: metrics, isLoading } = useQuery<DashboardMetrics>({
     queryKey: ['dashboard-metrics', startDate, endDate],
     queryFn: async () => {
-      const params = new URLSearchParams();
-      if (startDate) params.append('start_date', startDate);
-      if (endDate) params.append('end_date', endDate);
-
-      const { data } = await apiClient.get(`/api/dashboard/metrics?${params.toString()}`);
+      const data = await apiClient.get('/dashboard/metrics', {
+        start_date: startDate,
+        end_date: endDate
+      });
       return data;
     }
   });
