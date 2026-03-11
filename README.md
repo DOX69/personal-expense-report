@@ -87,6 +87,38 @@ This project is optimized for deployment on [Railway.app](https://railway.app/).
 - **Port Handling**: The application uses the dynamic `${PORT}` variable provided by Railway.
 - **Source of Truth**: The `Dockerfile` at the root is used for the build. `railway.json` handles the environment runtime settings.
 
+### ⌨️ Railway CLI Setup (Reproduction)
+To set up or reproduce this environment via the [Railway CLI](https://docs.railway.app/guides/cli):
+
+1. **Login**: `railway login`
+2. **Link Project**: `railway link --project 390e801c-866e-4bee-a143-b2432d40e778`
+3. **Add MySQL**: `railway add --database mysql`
+4. **Configure MySQL Variables**:
+   ```bash
+   railway variable set --service MySQL \
+     MYSQL_DATABASE=expense_report \
+     MYSQL_ROOT_PASSWORD=your_root_password \
+     MYSQLUSER=root \
+     'MYSQL_PUBLIC_URL=mysql://${{MYSQLUSER}}:${{MYSQL_ROOT_PASSWORD}}@${{RAILWAY_TCP_PROXY_DOMAIN}}:${{RAILWAY_TCP_PROXY_PORT}}/${{MYSQL_DATABASE}}' \
+     'MYSQL_URL=mysql://${{MYSQLUSER}}:${{MYSQL_ROOT_PASSWORD}}@${{RAILWAY_PRIVATE_DOMAIN}}:3306/${{MYSQL_DATABASE}}' \
+     'MYSQLDATABASE=${{MYSQL_DATABASE}}' \
+     'MYSQLHOST=${{RAILWAY_PRIVATE_DOMAIN}}' \
+     'MYSQLPASSWORD=${{MYSQL_ROOT_PASSWORD}}' \
+     MYSQLPORT=3306
+   ```
+5. **Configure Backend Variables**:
+   ```bash
+   railway variable set --service personal-expense-report \
+     'DB_HOST=${{MySQL.MYSQLHOST}}' \
+     DB_PORT=3306 \
+     DB_USER=root \
+     'DB_PASSWORD=${{MySQL.MYSQLPASSWORD}}' \
+     'DB_NAME=${{MySQL.MYSQLDATABASE}}' \
+     API_SECRET_KEY=your_secret \
+     ALLOWED_ORIGINS=http://localhost:3000 \
+     APP_PASSWORD=your_app_password
+   ```
+
 ### 🏠 Local Testing (Docker Compose)
 To emulate the Railway environment locally:
 1. Ensure your `.env` file reflects the variables in `.env.example`.
