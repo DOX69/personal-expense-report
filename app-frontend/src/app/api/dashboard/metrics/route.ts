@@ -15,8 +15,6 @@ export async function GET(request: Request) {
         amount,
         dim_categories!inner(flow_type)
       `)
-      // .neq('dim_categories.flow_type', 'transfer') -> wait, inner join filter syntax in postgrest:
-      // dim_categories!inner(flow_type) & .neq('dim_categories.flow_type', 'transfer')
       .neq('dim_categories.flow_type', 'transfer');
 
     if (startDate) {

@@ -69,7 +69,7 @@ Since the app is a unified Next.js project, you only need to deploy the `app-fro
 2. Install dependencies: `npm install`.
 3. Create a `.env.local` file with your Supabase credentials:
    ```env
-   NEXT_PUBLIC_SUPABASE_URL="yours"
+   SUPABASE_URL="yours"
    SUPABASE_ANON_KEY="yours"
    SUPABASE_SERVICE_ROLE_KEY="yours"
    APP_PASSWORD="your_desired_password"
