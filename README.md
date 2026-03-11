@@ -24,58 +24,32 @@ The project was recently migrated to a modern decoupled stack:
 
 ### Architecture
 
-```mermaid
-flowchart TD
-    %% Definitions
-    User(("👤 User"))
-
-    subgraph Frontend ["🖥️ App Frontend (Next.js)"]
-        direction TB
-        UI["User Interface
-        (Dashboard, Transactions, Import)"]
-        Charts["📊 Recharts"]
-        UI -.-> Charts
-    end
-
-    subgraph Backend ["⚙️ App Backend (FastAPI)"]
-        direction TB
-        API["🔌 API Endpoints"]
-        Pandas["🐼 Data Processor (Pandas)"]
-        DBLogic["🗄️ DB Connector"]
-
-        API --> Pandas
-        API <--> DBLogic
-    end
-
-    subgraph Storage ["💾 Data Storage (Kimball Star Schema)"]
-        direction TB
-        Fact[("� Fact: Transactions")]
-        Dim[("� Dim: Categories")]
-        Fact -- "FK: category_id" --> Dim
-    end
-
-    %% Interactions
-    User -- "Views & Interacts" --> UI
-    User -- "Uploads CSV" --> UI
-
-    UI -- "Fetches Metrics & Data" --> API
-    UI -- "Sends File" --> API
-
-    Pandas -- "Categorization Logic" --> API
-    DBLogic <--> Fact
-    DBLogic <--> Dim
-
-    %% Styling
-    classDef frontend fill:#E3F2FD,stroke:#2196F3,stroke-width:2px,color:#0D47A1;
-    classDef backend fill:#E8F5E9,stroke:#4CAF50,stroke-width:2px,color:#1B5E20;
-    classDef storage fill:#FFF3E0,stroke:#FF9800,stroke-width:2px,color:#E65100;
-    classDef user fill:#FCE4EC,stroke:#E91E63,stroke-width:2px,color:#880E4F;
-
-    class Frontend,UI,Charts frontend;
-    class Backend,API,Pandas,DBLogic backend;
-    class Storage,Fact,Dim storage;
-    class User user;
+```text
+  +-------------------------------------------------+
+  |                   👤 User                       |
+  +-------------------------------------------------+
+                          |
+                          v
+  +-----------------------+-------------------------+
+  |         🖥️ App Frontend (Next.js)              |
+  |  (UI, Recharts, Client-side Authorization)      |
+  +-----------------------+-------------------------+
+                          |
+                (API calls via X-API-Key)
+                          v
+  +-----------------------+-------------------------+
+  |         ⚙️ App Backend (FastAPI)               |
+  | (Python API, Pandas Processor, DB Connector)    |
+  +-----------------------+-------------------------+
+                          |
+                  (MySQL Connector)
+                          v
+  +-----------------------+-------------------------+
+  |         💾 Data Storage (MySQL)                 |
+  |   (Kimball Star Schema: Facts & Dimensions)     |
+  +-------------------------------------------------+
 ```
+
 
 #### Analytical Data Model (Star Schema)
 The project utilizes a **Kimball Star Schema** to ensure high-performance analytical queries and clean data organization:
