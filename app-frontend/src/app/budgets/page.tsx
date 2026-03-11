@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import axios from 'axios';
+import apiClient from '@/utils/apiClient';
 import { useState, useEffect } from 'react';
 import { Plus, Settings2, Target } from 'lucide-react';
 import clsx from 'clsx';
@@ -23,7 +23,7 @@ export default function BudgetsPage() {
     const { data: transactions, isLoading } = useQuery<Transaction[]>({
         queryKey: ['transactions'],
         queryFn: async () => {
-            const { data } = await axios.get('http://localhost:8000/api/transactions');
+            const { data } = await apiClient.get('/api/transactions');
             return data;
         }
     });
