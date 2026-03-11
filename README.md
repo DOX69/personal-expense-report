@@ -178,139 +178,49 @@ The project utilizes a **Kimball Star Schema** to ensure high-performance analyt
 1. **Upload**: User uploads CSV bank statements.
 2. **Standardization**: `data_processor.py` cleans descriptions and standardizes date/amount formats.
 3. **Categorization**: Transactions are mapped to English categories in `dim_categories` using a deterministic keyword-matching engine.
-4. **Persistence**: Validated and categorized data is stored in the Star Schema.
-5. **Visualization**: Backend calculates metrics (KPIs) by joining facts and dimensions, excluding internal transfers for accurate cashflow analysis.
+    - `category`: Specific category name (e.g., `Salary`, `Rent`, `Groceries`).
+    - `is_recurrent`: Boolean flag for subscription/salary tracking.
 
-### How it works ?
-The project is completely containerized. Without any software dependency other than Docker, you can run the application and its associated database.
-- The backend (FastAPI) runs by exposing port **8000**.
-- The frontend (Next.js) runs by displaying the interface on port **3000**.
-- The DB (MySQL) runs in the background and guarantees data persistence (local persistent docker volume: `db_data`).
+### 🔐 Security Schema
+1.  **Session Authorization**: A password-protected login page sets an `httpOnly` session cookie via Next.js Server Actions/Routes.
+2.  **Server-Side Supabase Client**: All database operations happen within API routes using a `supabase-js` client initialized with a `SUPABASE_SERVICE_ROLE_KEY`, ensuring no private keys are ever exposed to the client.
 
-### Installation & Usage
+---
 
-#### Case A: Docker (Recommended)
-The simplest way to run the project.
+## 🚀 Deployment
 
-1. **Prerequisites**: [Docker Desktop](https://www.docker.com/products/docker-desktop/) installed.
-2. **Clone & Build**:
+### Supabase Setup
+1. Create a project at [Supabase.com](https://supabase.com).
+2. Execute the schema initialization (found in `supabase/migrations` or provided via SQL editor).
+3. Copy your `NEXT_PUBLIC_SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`.
+
+### Vercel / Railway Deployment (Frontend + API)
+Since the app is now a unified Next.js project, you only need to deploy the `app-frontend` directory.
+
+| Variable | Description |
+| :--- | :--- |
+| `NEXT_PUBLIC_SUPABASE_URL` | Your Supabase Project URL |
+| `SUPABASE_SERVICE_ROLE_KEY` | Private Service Role Key (Server-side) |
+| `APP_PASSWORD` | Password for your web login |
+
+### 🛠️ Local Development
+1. Clone the project and navigate to `app-frontend`.
+2. Install dependencies: `npm install`.
+3. Create a `.env.local` file with your Supabase credentials.
+4. Run the development server:
    ```bash
-   git clone https://github.com/DOX69/personal-expense-report.git
-   cd personal-expense-report
-   docker-compose up --build -d
+   npm run dev
    ```
-3. **Restart without data loss**:
-   ```bash
-   docker compose up -d --build --force-recreate backend frontend db
-   ```
-3. **Access**: 
-   - App: [http://localhost:3000](http://localhost:3000)
-   - Docs: [http://localhost:8000/docs](http://localhost:8000/docs)
+5. Access the app at `http://localhost:3000`.
 
-#### Case B: Windows Setup Guide (Manual)
-Follow these steps to set up a full development environment on a fresh Windows machine.
-
-1. **Install Dependencies**
-Ensure you have the following installed:
-- **Python 3.11+**: [Download here](https://www.python.org/downloads/windows/). *Check "Add Python to PATH" during installation.*
-- **Node.js 18+**: [Download here](https://nodejs.org/).
-- **Git**: [Download here](https://git-scm.com/download/win).
-- **MySQL/MariaDB**: (Or use Docker for just the database: `docker-compose up db -d`).
-
-2. **Clone the Project**
-Open a Terminal (PowerShell or CMD) and run:
-```powershell
-git clone https://github.com/DOX69/personal-expense-report.git
-cd personal-expense-report
-```
-
-3. **Backend Setup**
-```powershell
-# Create Virtual Environment
-python -m venv .venv
-.\.venv\Scripts\activate
-
-# Install requirements
-pip install -r requirements.txt
-
-# Start Backend (API)
-cd app-backend
-uvicorn main:app --reload --port 8000
-```
-
-4. **Frontend Setup**
-Open a *new* terminal window:
-```powershell
-cd personal-expense-report/app-frontend
-
-# Install node packages
-npm install
-
-# Start Frontend (Dashboard)
-npm run dev
-```
-
-5. **Verify the Installation**
-- Navigate to `http://localhost:3000`.
-- Go to the **Import** tab and upload a test CSV to populate the dashboard!
-
-### Development
-
-If you wish to contribute, make modifications or develop your own integrations.
-
-#### Local Development Prerequisites
-- Node.js `>= 18` (for the Next.js frontend)
-- Python `>= 3.11` (for the FastAPI backend)
-- An active local MySQL server *or* launched via docker: `docker-compose up db -d`
-
-#### Database
-Export the corresponding local credentials or install a `.env`:
+### 🧪 Running Tests
 ```bash
-export DB_HOST=localhost
-export DB_USER=root
-export DB_PASSWORD=rootpassword
-export DB_NAME=expense_report
+npm test
 ```
 
-#### Backend (Python / FastAPI)
-1. **Create a virtual environment:**
-```bash
-python -m venv .venv
-source .venv/bin/activate       # MacOS / Linux
-.\.venv\Scripts\activate        # Windows
-```
-2. **Installation and Launch:**
-```bash
-pip install -r requirements.txt
-pip install -r app-backend/requirements-dev.txt # If exists
-cd app-backend
-uvicorn main:app --reload --host 0.0.0.0 --port 8000
-```
-3. **Backend Tests:**
-```bash
-python -m pytest tests/ -v
-```
-
-#### Frontend (Node.js / Next.js)
-1. **Install dependencies:**
-```bash
-cd app-frontend
-npm install
-```
-2. **Launch the development server:**
-```bash
-npm run dev
-```
-*(The frontend will run by default on http://localhost:3000)*
-3. **Frontend Tests (Jest):**
-```bash
-npm run test
-```
-
-#### Git flow & TDD
-We highly recommend a **Test-Driven-Development (TDD)** approach:
-1. Write the test first by going into the `tests/` or `__tests__/` folders. A fail is guaranteed (**Red**)
-2. Code the necessary logic to strict pass the test (**Green**)
-3. Operate a **Refactoring** session while keeping the entire test suite valid.
+### How it works?
+The project is a unified Next.js application.
+- **Frontend**: Responsive dashboard built with React and Tailwind.
+- **API**: Serverless route handlers managing transaction logic and database interaction.
+- **Data Persistence**: Supabase handles the heavy lifting of data storage and schema management.
 Make sure it is *all green* before validating your feature (PR).
-

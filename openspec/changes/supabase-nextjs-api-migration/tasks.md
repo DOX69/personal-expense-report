@@ -18,12 +18,13 @@
 ## 3. Frontend Refactoring
 
 - [x] 3.1 Introduce `app-frontend/src/lib/apiClient.ts` as a wrapper for fetch calls to `/api`.
-- [ ] 3.2 Update Main Dashboard (`page.tsx`) to consume Next.js API routes.
-- [ ] 3.3 Update Transactions and Category views to use the new backend integration.
-- [ ] 3.4 Perform end-to-end smoke test of the "Upload → Analyze → Visualize" flow.
+- [x] 3.2 Update Main Dashboard (`page.tsx`) to consume Next.js API routes.
+- [x] 3.3 Update Transactions and Category views to use the new backend integration.
+- [x] 3.4 Perform end-to-end smoke test of the "Upload → Analyze → Visualize" flow.
 
 ## 4. Final Verification and Handover
 
-- [ ] 4.1 Verify security: Ensure API routes are protected and service keys remain server-side.
-- [ ] 4.2 Update project documentation: Reflect the new architecture in `README.md`.
-- [ ] 4.3 Prepare PR: Consolidate changes and verify with existing test suite if possible.
+- [x] 4.1 Verify security: Ensure API routes are protected and service keys remain server-side.
+- [x] 4.2 Update project documentation: Reflect the new architecture in `README.md`.
+- [x] 4.3 Prepare PR: Consolidate changes and verify with existing test suite if possible.
+
