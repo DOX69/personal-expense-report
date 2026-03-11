@@ -1,13 +1,38 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import pandas as pd
+import os
 
-app = FastAPI(title="Personal Expense Report API")
+from fastapi import Security, HTTPException, status, Depends
+from fastapi.security.api_key import APIKeyHeader
+
+API_KEY = os.getenv("API_SECRET_KEY")
+API_KEY_NAME = "X-API-Key"
+api_key_header = APIKeyHeader(name=API_KEY_NAME, auto_error=False)
+
+async def verify_api_key(key: str = Security(api_key_header)):
+    if not API_KEY:
+        # In development, we might not have the key set
+        # But for Railway, it's mandatory
+        return
+    if key != API_KEY:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or missing API Key",
+        )
+
+app = FastAPI(
+    title="Personal Expense Report API",
+    dependencies=[Depends(verify_api_key)]
+)
 
 # Configure CORS
+allowed_origins_env = os.getenv("ALLOWED_ORIGINS", "http://localhost:3000")
+allowed_origins = [origin.strip() for origin in allowed_origins_env.split(",")]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

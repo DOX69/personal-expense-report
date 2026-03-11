@@ -33,19 +33,65 @@ flowchart TD
         direction TB
         UI["User Interface
         (Dashboard, Transactions, Import)"]
+        Auth["🔒 Auth Middleware
+        (Password Login)"]
         Charts["📊 Recharts"]
         UI -.-> Charts
+        UI --> Auth
     end
 
     subgraph Backend ["⚙️ App Backend (FastAPI)"]
         direction TB
         API["🔌 API Endpoints"]
+        Sec["🛡️ API Key Middleware
+        (X-API-Key)"]
         Pandas["🐼 Data Processor (Pandas)"]
         DBLogic["🗄️ DB Connector"]
 
-        API --> Pandas
-        API <--> DBLogic
+        API --> Sec
+        Sec --> Pandas
+        Sec <--> DBLogic
     end
+...
+### 🔐 Security Schema
+
+This application is designed for personal use and implements two layers of security:
+
+1.  **Frontend Authentication**: A password-protected login page sets an `httpOnly` session cookie to prevent unauthorized browser access.
+2.  **API Security**: All communication between the Frontend and Backend is protected by a shared secret key passed in the `X-API-Key` header. Direct access to the Backend URL without this key will return `401 Unauthorized`.
+
+---
+
+## 🚀 Railway Deployment
+
+This project is optimized for deployment on [Railway.app](https://railway.app/).
+
+### 📋 Required Environment Variables
+
+| Variable | Source | Description |
+| :--- | :--- | :--- |
+| `PORT` | Railway | Auto-injected by Railway |
+| `ALLOWED_ORIGINS` | Manual | Comma-separated list of allowed frontend URLs |
+| `API_SECRET_KEY` | Manual | Shared secret for backend authentication |
+| `DB_HOST` | Railway | Auto-referenced from Railway MySQL |
+| `DB_PORT` | Railway | Auto-referenced from Railway MySQL |
+| `DB_USER` | Railway | Auto-referenced from Railway MySQL |
+| `DB_PASSWORD` | Railway | Auto-referenced from Railway MySQL |
+| `DB_NAME` | Railway | Auto-referenced from Railway MySQL |
+| `NEXT_PUBLIC_API_URL` | Manual | Public URL of your Railway Backend |
+| `NEXT_PUBLIC_API_SECRET_KEY`| Manual | Must match `API_SECRET_KEY` |
+| `APP_PASSWORD` | Manual | Password for your web login |
+
+### 🛠️ Railway Configuration Notes
+- **MySQL Integration**: When you add a MySQL service in the same Railway project, the variable names in the table above will automatically link to the database.
+- **Port Handling**: The application uses the dynamic `${PORT}` variable provided by Railway.
+- **Source of Truth**: The `Dockerfile` at the root is used for the build. `railway.json` handles the environment runtime settings.
+
+### 🏠 Local Testing (Docker Compose)
+To emulate the Railway environment locally:
+1. Ensure your `.env` file reflects the variables in `.env.example`.
+2. Run `docker-compose up --build`.
+3. Access the frontend at `http://localhost:3000`.
 
     subgraph Storage ["💾 Data Storage (Kimball Star Schema)"]
         direction TB
@@ -91,8 +137,8 @@ The project utilizes a **Kimball Star Schema** to ensure high-performance analyt
 
 
 #### Component Breakdown
-- **Next.js Frontend**: A modern, responsive SPA using Tailwind CSS for styling and Lucide icons.
-- **FastAPI Backend**: A high-performance Python API handling business logic and data orchestration.
+- **Next.js Frontend**: A modern, responsive SPA using Tailwind CSS for styling and Lucide icons. All API interactions are handled via a centralized `apiClient.ts` for consistent security and performance.
+- **FastAPI Backend**: A high-performance Python API handling business logic and data orchestration. Protected by custom API Key middleware.
 - **Pandas Processor**: Handles complex CSV manipulations and deterministic keyword-based auto-categorization.
 - **MySQL Storage**: Robust relational database using a star schema for persistence and analytical flexibility.
 
@@ -121,7 +167,7 @@ The simplest way to run the project.
    cd personal-expense-report
    docker-compose up --build -d
    ```
-3. **Restard without data loss**:
+3. **Restart without data loss**:
    ```bash
    docker compose up -d --build --force-recreate backend frontend db
    ```

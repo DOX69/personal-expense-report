@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import axios from 'axios';
+import apiClient from '@/utils/apiClient';
 import { FileUp } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import clsx from 'clsx';
@@ -37,7 +37,7 @@ export default function RecentTransactions({ startDate, endDate, category, flowT
             if (flowType && flowType !== 'all') params.append('flow_type', flowType);
             if (search) params.append('search', search);
 
-            const { data } = await axios.get(`http://localhost:8000/api/transactions?${params.toString()}`);
+            const { data } = await apiClient.get(`/api/transactions?${params.toString()}`);
             return data;
         }
     });

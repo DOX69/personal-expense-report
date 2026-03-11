@@ -16,3 +16,7 @@ htmlcov/
 
 # Local data
 sample-data/
+
+# env files
+.env
+.env.example

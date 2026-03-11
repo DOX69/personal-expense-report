@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import axios from 'axios';
+import apiClient from '@/utils/apiClient';
 import { useMemo } from 'react';
 import { RefreshCcw, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
@@ -19,7 +19,7 @@ export default function SubscriptionsPage() {
     const { data: transactions, isLoading } = useQuery<Transaction[]>({
         queryKey: ['transactions'],
         queryFn: async () => {
-            const { data } = await axios.get('http://localhost:8000/api/transactions');
+            const { data } = await apiClient.get('/api/transactions');
             return data;
         }
     });

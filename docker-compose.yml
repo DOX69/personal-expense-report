@@ -10,9 +10,11 @@ services:
     environment:
       - PYTHONUNBUFFERED=1
       - DB_HOST=db
-      - DB_USER=${DB_USER:-user}
-      - DB_PASSWORD=${DB_PASSWORD:-password}
-      - DB_NAME=${DB_NAME:-expense_report}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME}
+      - API_SECRET_KEY=${API_SECRET_KEY}
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS}
     command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
     depends_on:
       db:
@@ -27,6 +29,10 @@ services:
       - ./app-frontend:/app
     ports:
       - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+      - NEXT_PUBLIC_API_SECRET_KEY=${API_SECRET_KEY}
+      - APP_PASSWORD=${APP_PASSWORD}
     command: sh -c "npm install && npm run dev"
     depends_on:
       - backend
@@ -37,10 +43,10 @@ services:
     image: mysql:8.0
     restart: always
     environment:
-      MYSQL_DATABASE: ${DB_NAME:-expense_report}
-      MYSQL_USER: ${DB_USER:-user}
-      MYSQL_PASSWORD: ${DB_PASSWORD:-password}
-      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-rootpassword}
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
     ports:
       - "3306:3306"
     volumes:

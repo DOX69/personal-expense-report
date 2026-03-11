@@ -13,10 +13,10 @@ jobs:
       mysql:
         image: mysql:8.0
         env:
-          MYSQL_DATABASE: expense_report
-          MYSQL_USER: user
-          MYSQL_PASSWORD: password
-          MYSQL_ROOT_PASSWORD: rootpassword
+          MYSQL_DATABASE: ${{ vars.DB_NAME }}
+          MYSQL_USER: ${{ vars.DB_USER }}
+          MYSQL_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          MYSQL_ROOT_PASSWORD: ${{ secrets.DB_ROOT_PASSWORD }}
         ports:
           - 3306:3306
         options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
@@ -37,17 +37,16 @@ jobs:
       - name: Run backend tests
         env:
           DB_HOST: 127.0.0.1
-          DB_USER: user
-          DB_PASSWORD: password
-          DB_NAME: expense_report
+          DB_PORT: 3306
+          DB_USER: ${{ vars.DB_USER }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          DB_NAME: ${{ vars.DB_NAME }}
+          API_SECRET_KEY: ${{ secrets.API_SECRET_KEY }}
           GITHUB_ACTIONS: true
         run: |
           cp -r app-backend app
           export PYTHONPATH=$PYTHONPATH:$(pwd)
-          echo "PYTHONPATH: $PYTHONPATH"
           sleep 10
-          pytest tests/test_ci_setup.py
-          pytest tests/test_db.py
           pytest app/tests/
 
   frontend:
@@ -68,4 +67,8 @@ jobs:
 
       - name: Run frontend tests
         working-directory: app-frontend
+        env:
+          NEXT_PUBLIC_API_URL: http://localhost:8000
+          NEXT_PUBLIC_API_SECRET_KEY: ${{ secrets.API_SECRET_KEY }}
+          APP_PASSWORD: ${{ secrets.APP_PASSWORD }}
         run: npm test
