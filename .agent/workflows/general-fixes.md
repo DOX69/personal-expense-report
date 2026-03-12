@@ -12,6 +12,7 @@ Use this workflow for small, non-feature changes like documentation updates, dep
 
 2. **Fix & Document**
    - Implement the minimal code fix.
+   - Use test-driven-development skill if you change code, to avoid errors next time.
    - Update relevant documentation (e.g., `README.md`, JSDoc).
    - If the fix is complex, create an OpenSpec proposal first.
 
