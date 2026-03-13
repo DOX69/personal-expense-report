@@ -1,0 +1,6 @@
+*
+!.gitignore
+!create-pull-request.md
+!general-fixes.md
+!vercel-setup.md
+!opsx-*.md
