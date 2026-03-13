@@ -90,23 +90,48 @@ export async function POST(request: Request) {
             return resolve(NextResponse.json({ success: false, errors: ['Fichier vide'] }));
           }
 
-          // Check required columns
-          const required = ['Date de début', 'Description', 'Montant', 'Devise'];
+          // Check required columns (support both English and French)
+          const headerMap: Record<string, string> = {
+            'date': 'date',
+            'Date de début': 'date',
+            'description': 'description',
+            'Description': 'description',
+            'amount': 'amount',
+            'Montant': 'amount',
+            'currency': 'currency',
+            'Devise': 'currency',
+            'type': 'type',
+            'Type': 'type'
+          };
+
+          const required = ['date', 'description', 'amount', 'currency'];
           const firstRow = rows[0];
-          const missing = required.filter(r => !(r in firstRow));
+          
+          // Find which required fields are present (using either English or French key)
+          const foundFields = new Map<string, string>();
+          for (const key in firstRow) {
+            if (headerMap[key]) {
+              foundFields.set(headerMap[key], key);
+            }
+          }
+
+          const missing = required.filter(r => !foundFields.has(r));
           
           if (missing.length > 0) {
-            return resolve(NextResponse.json({ success: false, errors: [`Colonnes manquantes: ${missing.join(', ')}`] }));
+            return resolve(NextResponse.json({ 
+              success: false, 
+              errors: [`Colonnes manquantes: ${missing.join(', ')}`] 
+            }));
           }
 
           const dbRecords = [];
           
           for (const row of rows) {
-            const dateRaw = row['Date de début'];
-            const description = row['Description'];
-            const amountRaw = row['Montant'];
-            const currency = row['Devise'];
-            const type = row['Type'] || null;
+            const dateRaw = row[foundFields.get('date')!];
+            const description = row[foundFields.get('description')!];
+            const amountRaw = row[foundFields.get('amount')!];
+            const currency = row[foundFields.get('currency')!];
+            const type = row['Type'] || row['type'] || null;
 
             if (!dateRaw || !description || amountRaw == null || !currency) {
               errors.push(`Valeurs manquantes pour certaines transactions.`);

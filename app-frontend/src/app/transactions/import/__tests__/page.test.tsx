@@ -22,9 +22,9 @@ describe('ImportPage', () => {
     it('renders the CSV format instructions', () => {
         renderWithProviders(<ImportPage />);
         expect(screen.getByText(/CSV Format Instructions/i)).toBeInTheDocument();
-        expect(screen.getByText(/date/i)).toBeInTheDocument();
-        expect(screen.getByText(/description/i)).toBeInTheDocument();
-        expect(screen.getByText(/amount/i)).toBeInTheDocument();
+        expect(screen.getAllByText(/date/i)[0]).toBeInTheDocument();
+        expect(screen.getAllByText(/description/i)[0]).toBeInTheDocument();
+        expect(screen.getAllByText(/amount/i)[0]).toBeInTheDocument();
         expect(screen.getAllByText(/category/i)[0]).toBeInTheDocument();
     });
 

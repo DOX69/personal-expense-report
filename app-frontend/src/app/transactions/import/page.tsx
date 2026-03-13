@@ -61,11 +61,12 @@ export default function ImportPage() {
                         Your CSV file must include a header row and follow this exact column structure:
                     </p>
                     <ul className="list-disc pl-5 space-y-2">
-                        <li><strong>date</strong>: YYYY-MM-DD format (e.g. 2023-10-15)</li>
-                        <li><strong>description</strong>: A readable string for the transaction</li>
-                        <li><strong>amount</strong>: A number representing the monetary value (negative for expenses, positive for income)</li>
-                        <li><strong>currency</strong>: 3-letter currency code (e.g. USD, EUR)</li>
-                        <li><strong>category</strong>: Grouping category (e.g. Groceries, Salary, Rent)</li>
+                        <li><strong>date</strong> (ou <strong>Date de début</strong>): YYYY-MM-DD format (e.g. 2023-10-15)</li>
+                        <li><strong>description</strong> (ou <strong>Description</strong>): A readable string for the transaction</li>
+                        <li><strong>amount</strong> (ou <strong>Montant</strong>): A number representing the monetary value (negative for expenses, positive for income)</li>
+                        <li><strong>currency</strong> (ou <strong>Devise</strong>): 3-letter currency code (e.g. USD, EUR)</li>
+                        <li><strong>type</strong> (ou <strong>Type</strong>): Optional transaction type</li>
+                        <li><strong>category</strong> (ou <strong>Catégorie</strong>): Optional grouping category (e.g. Groceries, Salary, Rent)</li>
                     </ul>
                 </div>
 
