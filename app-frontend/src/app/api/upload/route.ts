@@ -67,7 +67,7 @@ function parseDate(dateStr: string): string | null {
   return d.toISOString();
 }
 
-export async function POST(request: Request) {
+export async function POST(request: Request): Promise<NextResponse> {
   try {
     const data = await request.formData();
     const file = data.get('file') as File;
@@ -78,7 +78,7 @@ export async function POST(request: Request) {
 
     const textContent = await file.text();
     
-    return new Promise((resolve) => {
+    return await new Promise<NextResponse>((resolve) => {
       Papa.parse(textContent, {
         header: true,
         skipEmptyLines: true,

@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import apiClient from '@/utils/apiClient';
+import { apiClient } from '@/lib/apiClient';
 import { useState, useEffect } from 'react';
 import { Plus, Settings2, Target } from 'lucide-react';
 import clsx from 'clsx';
