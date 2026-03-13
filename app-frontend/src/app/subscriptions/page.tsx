@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import apiClient from '@/utils/apiClient';
+import { apiClient } from '@/lib/apiClient';
 import { useMemo } from 'react';
 import { RefreshCcw, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';

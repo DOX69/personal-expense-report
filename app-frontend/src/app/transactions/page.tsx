@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import apiClient from '@/utils/apiClient';
+import { apiClient } from '@/lib/apiClient';
 import { format, parseISO } from 'date-fns';
 import clsx from 'clsx';
 import { Search, Filter, Download } from 'lucide-react';
