@@ -64,6 +64,12 @@ Since the app is a unified Next.js project, you only need to deploy the `app-fro
 | `SUPABASE_SERVICE_ROLE_KEY` | Private Service Role Key (Server-side) |
 | `APP_PASSWORD` | Password for your web login |
 
+Command on vercel:
+
+```bash
+npm run build
+```
+
 ### 🛠️ Local Development
 1. Clone the project and navigate to `app-frontend`.
 2. Install dependencies: `npm install`.
